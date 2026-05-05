@@ -30,15 +30,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    lazy var preferences: [SettingsPane] = [
+    lazy var panes: [SettingsPane] = [
         Dozer(),
         General()
     ]
 
-    lazy var preferencesWindowController = SettingsWindowController(
-        panes: preferences,
+    lazy var settingsWindowController = SettingsWindowController(
+        panes: panes,
         style: .toolbarItems,
         animated: true,
         hidesToolbarForSingleItem: true
     )
+
+    func showGeneralSettings() {
+        settingsWindowController.show(pane: .general)
+    }
 }
