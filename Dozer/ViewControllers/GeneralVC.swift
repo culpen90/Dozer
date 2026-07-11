@@ -38,9 +38,11 @@ final class General: NSViewController, SettingsPane {
         LaunchAtLoginCheckbox.focusRingType = .none
 
         LaunchAtLoginCheckbox.isChecked = LaunchAtLogin.isEnabled
-        if let updater = updater {
+        if AppInfo.hasUpdateFeed, let updater = updater {
+            CheckForUpdatesCheckbox.isEnabled = true
             CheckForUpdatesCheckbox.isChecked = updater.automaticallyChecksForUpdates
         } else {
+            CheckForUpdatesCheckbox.isEnabled = false
             CheckForUpdatesCheckbox.isChecked = false
         }
 
@@ -69,7 +71,7 @@ final class General: NSViewController, SettingsPane {
     }
 
     @IBAction private func automaticallyCheckForUpdatesClicked(_ sender: NSButton) {
-        guard let updater = updater else {
+        guard CheckForUpdatesCheckbox.isEnabled, AppInfo.hasUpdateFeed, let updater = updater else {
             CheckForUpdatesCheckbox.isChecked = false
             return
         }

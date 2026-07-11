@@ -10,9 +10,9 @@ import Settings
 
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    // Sparkle 2 updater. Shared so the settings panes can read/write its state.
+    // Sparkle 2 updater. Only start it when this build has an update feed.
     let updaterController = SPUStandardUpdaterController(
-        startingUpdater: true,
+        startingUpdater: AppInfo.hasUpdateFeed,
         updaterDelegate: nil,
         userDriverDelegate: nil
     )
