@@ -2,6 +2,10 @@
 	<img width="200" height="200" margin-right="100%" src="https://raw.githubusercontent.com/Mortennn/Dozer/master/Stuff/AppIcon.png">
 </p>
 <p align="center">Hide menu bar icons to give your Mac a cleaner look.</p>
+
+> [!NOTE]
+> This repository is an unofficial fork of the original [Mortennn/Dozer](https://github.com/Mortennn/Dozer) project, which has not been updated in about four years. It is not the original Dozer repository.
+
 <p align="center">
 	<a href="https://github.com/Mortennn/Dozer/releases/latest">
  		<img src="https://img.shields.io/badge/download-latest-brightgreen.svg" alt="download">
