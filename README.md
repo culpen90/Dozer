@@ -36,4 +36,4 @@ There are 2 or 3, numbered from right to left:
 <!-- **Checkout [this GIF](https://raw.githubusercontent.com/Mortennn/Dozer/master/Stuff/demo.gif) to watch Dozer in action.** -->
 
 ## 📄 Requirements
-macOS 10.13+
+macOS 11+ (Big Sur)
