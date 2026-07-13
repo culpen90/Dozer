@@ -5,22 +5,22 @@
 import Cocoa
 import Defaults
 
-public final class DozerIcons {
-    static var shared = DozerIcons()
-    private var dozerIcons: [HelperstatusIcon] = []
+public final class BarHideIcons {
+    static var shared = BarHideIcons()
+    private var barHideIcons: [HelperstatusIcon] = []
     private var timerToCheckUserInteraction = Timer()
-    private var timerToHideDozerIcons = Timer()
+    private var timerToHideBarHideIcons = Timer()
     private var previousApp = NSRunningApplication()
 
     private init() {
-        dozerIcons.append(NormalStatusIcon())
+        barHideIcons.append(NormalStatusIcon())
 
-        if !hideBothDozerIcons  || !Defaults[.isShortcutSet] {
-            dozerIcons.append(NormalStatusIcon())
+        if !hideBothBarHideIcons  || !Defaults[.isShortcutSet] {
+            barHideIcons.append(NormalStatusIcon())
         }
 
-        if enableRemoveDozerIcon {
-            dozerIcons.append(RemoveStatusIcon())
+        if enableRemoveBarHideIcon {
+            barHideIcons.append(RemoveStatusIcon())
         }
 
         if hideStatusBarIconsAfterDelay {
@@ -28,7 +28,7 @@ public final class DozerIcons {
         }
 
         Defaults.observe(.isShortcutSet) { change in
-            self.triggerHideBothDozerIcons()
+            self.triggerHideBothBarHideIcons()
         }
         .tieToLifetime(of: self)
     }
@@ -67,36 +67,36 @@ public final class DozerIcons {
         }
     }
 
-    public var hideBothDozerIcons: Bool = Defaults[.noIconMode] {
+    public var hideBothBarHideIcons: Bool = Defaults[.noIconMode] {
         didSet {
-            Defaults[.noIconMode] = self.hideBothDozerIcons
-            triggerHideBothDozerIcons()
+            Defaults[.noIconMode] = self.hideBothBarHideIcons
+            triggerHideBothBarHideIcons()
         }
     }
 
-    public func triggerHideBothDozerIcons() {
-        let normalStatusIconsCount = dozerIcons.filter { $0.type == .normal}.count
-        if hideBothDozerIcons && Defaults[.isShortcutSet] {
+    public func triggerHideBothBarHideIcons() {
+        let normalStatusIconsCount = barHideIcons.filter { $0.type == .normal}.count
+        if hideBothBarHideIcons && Defaults[.isShortcutSet] {
             if normalStatusIconsCount == 2 {
-                let rightDozerIconXPos = get(dozerIcon: .normalRight).xPositionOnScreen
-                dozerIcons.removeAll { $0.xPositionOnScreen == rightDozerIconXPos }
+                let rightBarHideIconXPos = get(barHideIcon: .normalRight).xPositionOnScreen
+                barHideIcons.removeAll { $0.xPositionOnScreen == rightBarHideIconXPos }
             }
-        } else if !hideBothDozerIcons && Defaults[.isShortcutSet] || !Defaults[.isShortcutSet] {
+        } else if !hideBothBarHideIcons && Defaults[.isShortcutSet] || !Defaults[.isShortcutSet] {
             if normalStatusIconsCount == 1 {
                 show()
-                dozerIcons.append(NormalStatusIcon())
+                barHideIcons.append(NormalStatusIcon())
             }
         }
         show()
     }
 
-    public var enableRemoveDozerIcon: Bool = Defaults[.removeDozerIconEnabled] {
+    public var enableRemoveBarHideIcon: Bool = Defaults[.removeBarHideIconEnabled] {
         didSet {
-            Defaults[.removeDozerIconEnabled] = self.enableRemoveDozerIcon
-            if enableRemoveDozerIcon {
-                dozerIcons.append(RemoveStatusIcon())
+            Defaults[.removeBarHideIconEnabled] = self.enableRemoveBarHideIcon
+            if enableRemoveBarHideIcon {
+                barHideIcons.append(RemoveStatusIcon())
             } else {
-                dozerIcons.removeAll { $0.type == .remove }
+                barHideIcons.removeAll { $0.type == .remove }
             }
             showAll()
         }
@@ -106,7 +106,7 @@ public final class DozerIcons {
         didSet {
             Defaults[.showIconAndMenuEnabled] = self.enableIconAndMenu
             if self.enableIconAndMenu == false {
-                _ = DozerIcons.toggleDockIcon(showIcon: false)
+                _ = BarHideIcons.toggleDockIcon(showIcon: false)
                 appDelegate.showPreferences()
             }
         }
@@ -115,7 +115,7 @@ public final class DozerIcons {
     public var iconFontSize: Int = Defaults[.iconSize] {
         didSet {
             Defaults[.iconSize] = self.iconFontSize
-            for icon in dozerIcons {
+            for icon in barHideIcons {
                 icon.setSize()
             }
         }
@@ -124,7 +124,7 @@ public final class DozerIcons {
     public var buttonPadding: CGFloat = Defaults[.buttonPadding] {
         didSet {
             Defaults[.buttonPadding] = self.buttonPadding
-            for icon in dozerIcons {
+            for icon in barHideIcons {
                 icon.setSize()
             }
         }
@@ -165,7 +165,7 @@ public final class DozerIcons {
     }
 
     public func toggle() {
-        if get(dozerIcon: .normalLeft).isShown {
+        if get(barHideIcon: .normalLeft).isShown {
             hide()
         } else {
             show()
@@ -173,7 +173,7 @@ public final class DozerIcons {
     }
 
     public func toggleRemove() {
-        if get(dozerIcon: .remove).isShown {
+        if get(barHideIcon: .remove).isShown {
             perform(action: .hide, statusIcon: .remove)
         } else {
             perform(action: .show, statusIcon: .remove)
@@ -186,21 +186,21 @@ public final class DozerIcons {
             previousApp = frontmostApplication
         }
         if Defaults[.showIconAndMenuEnabled] {
-            _ = DozerIcons.toggleDockIcon(showIcon: true)
+            _ = BarHideIcons.toggleDockIcon(showIcon: true)
             NSApp.activate(ignoringOtherApps: true)
         }
     }
 
     public func hideIconAndMenu() {
         if Defaults[.showIconAndMenuEnabled] {
-            _ = DozerIcons.toggleDockIcon(showIcon: false)
+            _ = BarHideIcons.toggleDockIcon(showIcon: false)
             if NSWorkspace.shared.frontmostApplication?.bundleIdentifier == AppInfo.bundleIdentifier {
                 previousApp.activate()
             }
         }
     }
 
-    /// Force show all Dozer icons
+    /// Force show all BarHide icons
     public func showAll() {
         perform(action: .show, statusIcon: .remove)
         perform(action: .show, statusIcon: .normalLeft)
@@ -210,17 +210,17 @@ public final class DozerIcons {
 
     public func handleOptionClick() {
         showIconAndMenu()
-        if get(dozerIcon: .normalLeft).isShown {
-            DozerIcons.shared.perform(
+        if get(barHideIcon: .normalLeft).isShown {
+            BarHideIcons.shared.perform(
                 action: .toggle,
                 statusIcon: .remove
             )
         } else {
-            DozerIcons.shared.perform(
+            BarHideIcons.shared.perform(
                 action: .show,
                 statusIcon: .normalLeft
             )
-            DozerIcons.shared.perform(
+            BarHideIcons.shared.perform(
                 action: .show,
                 statusIcon: .remove
             )
@@ -252,22 +252,22 @@ public final class DozerIcons {
             return
         }
 
-        DozerIcons.shared.hide()
+        BarHideIcons.shared.hide()
     }
 
-    // MARK: timerToHideDozerIcons methods
+    // MARK: timerToHideBarHideIcons methods
     private func startTimer() {
         guard Defaults[.hideAfterDelayEnabled] else {
             stopTimer()
             return
         }
-        timerToHideDozerIcons = Timer.scheduledTimer(withTimeInterval: Defaults[.hideAfterDelay], repeats: false) { (_: Timer) -> Void in
+        timerToHideBarHideIcons = Timer.scheduledTimer(withTimeInterval: Defaults[.hideAfterDelay], repeats: false) { (_: Timer) -> Void in
             self.willHideStatusBarIcons()
         }
     }
 
     private func stopTimer() {
-        timerToHideDozerIcons.invalidate()
+        timerToHideBarHideIcons.invalidate()
     }
 
     func resetTimer() {
@@ -277,13 +277,13 @@ public final class DozerIcons {
 
     // MARK: Private methods
     /// Will fail silently if statusIcon does not exist
-    private func perform(action: StatusIconAction, statusIcon: DozerIcon) {
+    private func perform(action: StatusIconAction, statusIcon: BarHideIcon) {
         if statusIcon == .remove {
-            guard Defaults[.removeDozerIconEnabled] else {
+            guard Defaults[.removeBarHideIconEnabled] else {
                 return
             }
         }
-        let theStatusIcon: HelperstatusIcon = get(dozerIcon: statusIcon)
+        let theStatusIcon: HelperstatusIcon = get(barHideIcon: statusIcon)
         switch action {
         case .show:
             theStatusIcon.show()
@@ -294,25 +294,25 @@ public final class DozerIcons {
         }
     }
 
-    /// Will crash if trying to get ´DozerIcon´ which does not exist in the menu bar
-    private func get(dozerIcon: DozerIcon) -> HelperstatusIcon {
+    /// Will crash if trying to get ´BarHideIcon´ which does not exist in the menu bar
+    private func get(barHideIcon: BarHideIcon) -> HelperstatusIcon {
         var normalStatusIconsXPosition: [CGFloat] = []
-        for statusIcon in dozerIcons where statusIcon.type == .normal {
+        for statusIcon in barHideIcons where statusIcon.type == .normal {
             normalStatusIconsXPosition.append(statusIcon.xPositionOnScreen)
         }
-        switch dozerIcon {
+        switch barHideIcon {
         case .remove:
-            guard let removeStatusIcon = dozerIcons.first(where: { $0.type == .remove }) else {
+            guard let removeStatusIcon = barHideIcons.first(where: { $0.type == .remove }) else {
                 fatalError("Failed getting remove status icon")
             }
             return removeStatusIcon
         case .normalLeft:
-            guard let leftStatusIcon = dozerIcons.first(where: { $0.xPositionOnScreen == normalStatusIconsXPosition.min() }) else {
+            guard let leftStatusIcon = barHideIcons.first(where: { $0.xPositionOnScreen == normalStatusIconsXPosition.min() }) else {
                 fatalError("Failed getting status icon on the left")
             }
             return leftStatusIcon
         case .normalRight:
-            guard let rightStatusIcon = dozerIcons.first(where: { $0.xPositionOnScreen == normalStatusIconsXPosition.max() }) else {
+            guard let rightStatusIcon = barHideIcons.first(where: { $0.xPositionOnScreen == normalStatusIconsXPosition.max() }) else {
                 fatalError("Failed getting status icon on the right")
             }
             return rightStatusIcon
@@ -341,7 +341,7 @@ public final class DozerIcons {
         for windowInfo in windowInfoList {
             guard let window = Window(windowInfo),
                 // If the preferences window is close to the menu bar it won't auto hide
-                window.owner != "Dozer" else {
+                window.owner != "BarHide" else {
                     continue
             }
 

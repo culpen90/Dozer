@@ -6,13 +6,13 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="General" customModule="Dozer" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="General" customModule="BarHide" customModuleProvider="target">
             <connections>
                 <outlet property="ButtonPaddingPopUpButton" destination="D1W-S4-kqi" id="FHs-Gq-kJv"/>
                 <outlet property="CheckForUpdatesCheckbox" destination="htn-2c-54s" id="sO5-Ft-amU"/>
-                <outlet property="EnableRemoveDozerIconCheckbox" destination="pDX-1f-4hl" id="uHk-1U-HG9"/>
+                <outlet property="EnableRemoveBarHideIconCheckbox" destination="pDX-1f-4hl" id="uHk-1U-HG9"/>
                 <outlet property="FontSizePopUpButton" destination="Lku-wR-aPA" id="GZe-ld-Ip5"/>
-                <outlet property="HideBothDozerIconsCheckbox" destination="w7z-Qa-kqw" id="L5J-6S-jtb"/>
+                <outlet property="HideBothBarHideIconsCheckbox" destination="w7z-Qa-kqw" id="L5J-6S-jtb"/>
                 <outlet property="HideStatusBarIconsAfterDelayCheckbox" destination="hOy-nu-Sy0" id="aNv-vt-dQL"/>
                 <outlet property="HideStatusBarIconsAtLaunchCheckbox" destination="phN-BY-WEC" id="zff-cm-aik"/>
                 <outlet property="HideStatusBarIconsSecondsPopUpButton" destination="Ziw-so-qpj" id="iWr-jc-Wbb"/>
@@ -106,13 +106,13 @@
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="w7z-Qa-kqw">
-	            <rect key="frame" x="18" y="240" width="357" height="18"/>
+	            <rect key="frame" x="18" y="240" width="370" height="18"/>
 	            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-	            <buttonCell key="cell" type="check" title="Hide both Dozer icons when menu bar icons are hidden" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="PrK-hp-6i2">
+	            <buttonCell key="cell" type="check" title="Hide both BarHide icons when menu bar icons are hidden" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="PrK-hp-6i2">
 		            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
 	            </buttonCell>
 	            <connections>
-		            <action selector="hideBothDozerIconsClicked:" target="-2" id="PdP-dQ-ir6"/>
+		            <action selector="hideBothBarHideIconsClicked:" target="-2" id="PdP-dQ-ir6"/>
 	            </connections>
                 </button>
                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Yjj-cw-XAs">
@@ -127,18 +127,18 @@
                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pDX-1f-4hl">
                     <rect key="frame" x="18" y="197" width="361" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <buttonCell key="cell" type="check" title="Enable 'remove' Dozer icon" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Toa-to-mCu">
+                    <buttonCell key="cell" type="check" title="Enable 'remove' BarHide icon" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Toa-to-mCu">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
-                        <action selector="enableRemoveDozerIconClicked:" target="-2" id="vr8-Rh-V8P"/>
+                        <action selector="enableRemoveBarHideIconClicked:" target="-2" id="vr8-Rh-V8P"/>
                     </connections>
                 </button>
                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="IDw-Ag-Gcv">
                     <rect key="frame" x="36" y="168" width="349" height="26"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Enable additional Dozer icon. Show/hide less frequently used menu bar icons using option+click." id="UjO-Yp-XO4">
+                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Enable additional BarHide icon. Show/hide less frequently used menu bar icons using option+click." id="UjO-Yp-XO4">
                         <font key="font" metaFont="system" size="10"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -156,9 +156,9 @@
                     </connections>
                 </button>
                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kyk-ok-xNW">
-                    <rect key="frame" x="36" y="124" width="330" height="13"/>
+                    <rect key="frame" x="36" y="124" width="349" height="13"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Temporarily replaces Application menu and shows Dozer dock icon." id="ETO-zu-yhS">
+                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Temporarily replaces Application menu and shows BarHide dock icon." id="ETO-zu-yhS">
                         <font key="font" metaFont="system" size="10"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -191,9 +191,9 @@
                     </connections>
                 </popUpButton>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TmQ-WL-Cmf">
-                    <rect key="frame" x="95" y="88" width="150" height="16"/>
+                    <rect key="frame" x="95" y="88" width="170" height="16"/>
                     <autoresizingMask key="autoresizingMask"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="Font size of Dozer icons" id="lI8-BD-YX6">
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Font size of BarHide icons" id="lI8-BD-YX6">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -222,9 +222,9 @@
                     </connections>
                 </popUpButton>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tB7-K2-Gts">
-                    <rect key="frame" x="95" y="58" width="131" height="16"/>
+                    <rect key="frame" x="95" y="58" width="150" height="16"/>
                     <autoresizingMask key="autoresizingMask"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="Width of Dozer icons" id="y67-Ov-Fvx">
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Width of BarHide icons" id="y67-Ov-Fvx">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

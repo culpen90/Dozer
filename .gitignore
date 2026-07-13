@@ -1,7 +1,7 @@
 build/
 .build/
 Releases/
-Dozer.xcodeproj/
+BarHide.xcodeproj/
 Credentials/
 
 # Fastlane

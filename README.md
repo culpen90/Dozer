@@ -1,39 +1,47 @@
+# BarHide
+
+BarHide keeps a crowded macOS menu bar tidy by hiding icons until you need them.
+
 > [!NOTE]
-> This repository is an unofficial fork of the original [Mortennn/Dozer](https://github.com/Mortennn/Dozer) project, which has not been updated in about four years. It is not the original Dozer repository.
+> BarHide is an independently maintained fork of the original
+> [Mortennn/Dozer](https://github.com/Mortennn/Dozer) project.
 
+## Build from source
 
-## ⚙️ Install
-Using [Homebrew Cask](https://formulae.brew.sh/cask/dozer):
+BarHide requires macOS 11 or later, Xcode 15 or later, and
+[Homebrew](https://brew.sh). The repository does not currently publish a
+Homebrew cask or a prebuilt release.
+
 ```shell
-brew install --cask dozer
+git clone https://github.com/culpen90/BarHide.git
+cd BarHide
+make build
 ```
 
-Manual:
+The command installs the development tools from the `Brewfile`, generates
+`BarHide.xcodeproj`, and opens it in Xcode. Select the `BarHide` scheme, then
+choose **Product → Run** to compile and launch the app.
 
-[Download](https://github.com/Mortennn/Dozer/releases/latest), open and drag the app to the Applications folder.
+## BarHide icons
 
-## ⚫️ Dozer Icons
+There are two or three control icons, numbered from right to left:
 
-There are 2 or 3, numbered from right to left:
+1. The first can be positioned anywhere and acts as a point of interaction.
+2. The second and everything to its left are hidden or shown when you click a BarHide icon.
+3. The optional remove icon and everything to its left are hidden or shown when you Option-click a BarHide icon.
 
-1. this can be positioned anywhere you prefer, it is only a point of interaction
-2. this and everything to its left will be hidden/shown by clicking any Dozer icon
-3. (Optional) the "remove" icon and everything to its left will be hidden/shown by option-clicking any Dozer icon
+## Usage
 
-## 👨‍💻 Usage
+- Move the icons you normally want hidden to the left of the second BarHide icon.
+- Move less frequently used icons to the left of the optional third BarHide icon.
+- Hold Command (`⌘`) while dragging to reposition menu bar icons.
 
-* Move the icons you want to hide until clicked to the left of the second Dozer icon
-* Move the icons you want to hide until option-clicked to the left of the third Dozer icon
+## Interactions
 
-**N.B. hold command (`⌘`) then drag to move the menu bar icons.**
+- Left-click a BarHide icon to hide or show the first group of menu bar icons.
+- Option-left-click a BarHide icon to show the optional second group.
+- Right-click a BarHide icon to open settings.
 
-## 👇 Interactions
-* Left-click one of the Dozer icons to hide/show the first group of menu bar icons
-* Option-Left-click one of the Dozer icons to show the second group of menu bar icons (optional)
-* Right-click one of the Dozer icons to open the settings
+## Requirements
 
-<!-- GIF is commented out until it is redone -->
-<!-- **Checkout [this GIF](https://raw.githubusercontent.com/Mortennn/Dozer/master/Stuff/demo.gif) to watch Dozer in action.** -->
-
-## 📄 Requirements
-macOS 11+ (Big Sur)
+macOS 11 or later (Big Sur or newer).

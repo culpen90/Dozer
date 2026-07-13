@@ -1,5 +1,5 @@
-input_dir: Dozer/Other/
-output_dir: Dozer/Other/Generated/
+input_dir: BarHide/Other/
+output_dir: BarHide/Other/Generated/
 xcassets:
   inputs:
     Assets.xcassets

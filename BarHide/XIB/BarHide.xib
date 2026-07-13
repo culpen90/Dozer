@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="Dozer" customModule="Dozer" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="BarHide" customModule="BarHide" customModuleProvider="target">
             <connections>
                 <outlet property="checkForUpdates" destination="9vD-g9-QSn" id="vq3-pD-sN9"/>
                 <outlet property="quit" destination="pje-Gc-VuB" id="bVZ-fZ-wIo"/>
@@ -30,8 +30,8 @@
                     </buttonCell>
                 </button>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SpT-W4-9Jy">
-                    <rect key="frame" x="18" y="83" width="60" height="24"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="Dozer" id="aTf-T7-WMw">
+                    <rect key="frame" x="18" y="83" width="80" height="24"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="BarHide" id="aTf-T7-WMw">
                         <font key="font" metaFont="systemBold" size="20"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

@@ -68,7 +68,7 @@ class HelperstatusIcon {
             fatalError("helper status item button failed")
         }
         let image = statusIconButton.image
-        var size = DozerIcons.shared.iconFontSize
+        var size = BarHideIcons.shared.iconFontSize
         if self.type == .remove {
             size /= 2
         }
@@ -90,10 +90,10 @@ class HelperstatusIcon {
     }
 
     var xPositionOnScreen: CGFloat {
-        guard let dozerIconFrame = statusIcon.button?.window?.frame else {
+        guard let barHideIconFrame = statusIcon.button?.window?.frame else {
             return 0
         }
-        let dozerIconXPosition = dozerIconFrame.origin.x
-        return dozerIconXPosition
+        let barHideIconXPosition = barHideIconFrame.origin.x
+        return barHideIconXPosition
     }
 }
