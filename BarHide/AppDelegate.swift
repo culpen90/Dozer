@@ -18,26 +18,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
 
     func applicationDidFinishLaunching(_: Notification) {
+        // Preserve settings and shortcuts from installations made before the
+        // app and bundle identifier were renamed to BarHide.
+        migrateLegacyApplicationPreferencesIfNeeded()
+
         // Carry over a shortcut saved by the old MASShortcut integration.
         migrateLegacyShortcutIfNeeded()
 
         // Trigger on key-down to match MASShortcut's original behavior.
         KeyboardShortcuts.onKeyDown(for: .toggleMenuItems) {
-            DozerIcons.shared.toggle()
+            BarHideIcons.shared.toggle()
         }
 
-        // Initalize Dozer Icons
-        _ = DozerIcons.shared
+        // Initalize BarHide Icons
+        _ = BarHideIcons.shared
 
         // If enabled hide menu bar icons at launch
-        DozerIcons.shared.hideAtLaunch()
+        BarHideIcons.shared.hideAtLaunch()
 
-        _ = DozerIcons.toggleDockIcon(showIcon: false)
+        _ = BarHideIcons.toggleDockIcon(showIcon: false)
     }
 
-    // Show all Dozer icons when opening Dozer from Finder etc.
+    /// Copy persisted preferences from the original Dozer bundle domain once.
+    /// Existing BarHide values win so a later launch cannot overwrite changes
+    /// made after the rename.
+    private func migrateLegacyApplicationPreferencesIfNeeded() {
+        let defaults = UserDefaults.standard
+        let migrationKey = "didMigrateDozerPreferencesToBarHide"
+
+        guard defaults.object(forKey: migrationKey) == nil else {
+            return
+        }
+
+        let currentDomain = defaults.persistentDomain(forName: AppInfo.bundleIdentifier) ?? [:]
+        let legacyDomain = defaults.persistentDomain(forName: "com.mortennn.Dozer") ?? [:]
+
+        for (key, value) in legacyDomain where currentDomain[key] == nil {
+            defaults.set(value, forKey: key)
+        }
+
+        defaults.set(true, forKey: migrationKey)
+    }
+
+    // Show all BarHide icons when opening BarHide from Finder etc.
     func applicationOpenUntitledFile(_ sender: NSApplication) -> Bool {
-        DozerIcons.shared.showAll()
+        BarHideIcons.shared.showAll()
         return true
     }
 
@@ -75,7 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     lazy var preferences: [SettingsPane] = [
-        Dozer(),
+        BarHide(),
         General()
     ]
 

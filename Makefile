@@ -1,6 +1,6 @@
 build:
 	@brew bundle --no-upgrade
-	@mkdir -p Dozer/Other/Generated
+	@mkdir -p BarHide/Other/Generated
 	@swiftgen
 	@xcodegen
 	@xed "."

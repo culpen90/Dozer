@@ -6,12 +6,12 @@ import Cocoa
 import Sparkle
 import Settings
 
-final class Dozer: NSViewController, SettingsPane {
-    let paneIdentifier = Settings.PaneIdentifier.dozer
-    let paneTitle: String = "Dozer"
+final class BarHide: NSViewController, SettingsPane {
+    let paneIdentifier = Settings.PaneIdentifier.barHide
+    let paneTitle: String = "BarHide"
     let toolbarItemIcon = NSImage(named: "AppIcon")!
 
-    override var nibName: NSNib.Name? { "Dozer" }
+    override var nibName: NSNib.Name? { "BarHide" }
 
     @IBOutlet private var versionLabel: NSTextField!
     @IBOutlet private var checkForUpdates: NSButton!

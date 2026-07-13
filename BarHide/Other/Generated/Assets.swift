@@ -1,5 +1,5 @@
 // Generated using SwiftGen-compatible output for the current asset catalog.
-// This file is checked in so Dozer can build when SwiftGen is unavailable.
+// This file is checked in so BarHide can build when SwiftGen is unavailable.
 
 import AppKit
 

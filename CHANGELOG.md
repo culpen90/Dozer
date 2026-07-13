@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Rename the app, bundle identity, Xcode project, and user interface to BarHide.
+- Migrate preferences and keyboard shortcuts from the original Dozer bundle domain.
+- Existing Dozer users must re-enable launch at login once for the new BarHide bundle identity.
+
 ## Version 4.2.0
 New features:
 * Configure amount of seconds to hide the icons after #104. @blakedgordon

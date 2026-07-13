@@ -13,7 +13,7 @@ extension Defaults.Keys {
     static let hideAfterDelayEnabled: Defaults.Key<Bool> = Key<Bool>("hideAfterDelayEnabled", default: false)
     static let hideAfterDelay: Defaults.Key<TimeInterval> = Key<TimeInterval>("hideAfterDelay", default: 10)
     static let noIconMode: Defaults.Key<Bool> = Key<Bool>("noIconMode", default: false)
-    static let removeDozerIconEnabled: Defaults.Key<Bool> = Key<Bool>("removeStatusIconEnabled", default: false)
+    static let removeBarHideIconEnabled: Defaults.Key<Bool> = Key<Bool>("removeStatusIconEnabled", default: false)
     static let showIconAndMenuEnabled: Defaults.Key<Bool> = Key<Bool>("showIconAndMenuEnabled", default: false)
     static let iconSize: Defaults.Key<Int> = Key<Int>("fontSize", default: 10)
     static let buttonPadding: Defaults.Key<CGFloat> = Key<CGFloat>("buttonPadding", default: 25)
@@ -30,7 +30,7 @@ extension NSStoryboard.Name {
 }
 
 extension Settings.PaneIdentifier {
-    static let dozer = Self("dozer")
+    static let barHide = Self("barHide")
     static let general = Self("general")
 }
 
@@ -61,7 +61,7 @@ enum StatusIconType {
     case remove
 }
 
-enum DozerIcon {
+enum BarHideIcon {
     case remove
     case normalLeft
     case normalRight

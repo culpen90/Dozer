@@ -1,4 +1,4 @@
-name: Dozer
+name: BarHide
 options:
   usesTabs: false
   tabWidth: 4
@@ -25,7 +25,7 @@ packages:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     exactVersion: 3.0.1
 targets:
-  Dozer:
+  BarHide:
     type: application
     platform: macOS
     deploymentTarget:
@@ -34,7 +34,7 @@ targets:
       Debug: Configs/Debug.xcconfig
       Release: Configs/Release.xcconfig
     sources:
-      - Dozer
+      - BarHide
     postBuildScripts:
       - script: |
           export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
@@ -47,13 +47,13 @@ targets:
       - path: Scripts/Swiftlint.sh
         name: Swiftlint
       # LaunchAtLogin-Legacy embeds a login-item helper for macOS < 13.
-      - script: '"${BUILT_PRODUCTS_DIR}/LaunchAtLogin_LaunchAtLogin.bundle/Contents/Resources/copy-helper-swiftpm.sh"'
+      - path: Scripts/CopyLaunchAtLoginHelper.sh
         name: Copy "Launch at Login Helper"
         basedOnDependencyAnalysis: false
     settings:
       base:
-        CODE_SIGN_ENTITLEMENTS: Dozer/Other/Dozer.entitlements
-        PRODUCT_BUNDLE_IDENTIFIER: "com.mortennn.Dozer"
+        CODE_SIGN_ENTITLEMENTS: BarHide/Other/BarHide.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: "com.culpen90.BarHide"
         SWIFT_VERSION: 5
         DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
         ENABLE_HARDENED_RUNTIME: true
@@ -68,7 +68,7 @@ targets:
       - package: KeyboardShortcuts
       - package: Sparkle
 schemes:
-  Dozer:
+  BarHide:
     build:
       targets:
-        Dozer: all
+        BarHide: all
