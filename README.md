@@ -1,62 +1,67 @@
 <p align="center">
-	<img width="200" height="200" margin-right="100%" src="https://raw.githubusercontent.com/Mortennn/Dozer/master/Stuff/AppIcon.png">
-</p>
-<p align="center">Hide menu bar icons to give your Mac a cleaner look.</p>
-<p align="center">
-	<a href="https://github.com/Mortennn/Dozer/releases/latest">
- 		<img src="https://img.shields.io/badge/download-latest-brightgreen.svg" alt="download">
-	<a href="https://img.shields.io/badge/platform-macOS-lightgrey.svg">
- 		<img src="https://img.shields.io/badge/platform-macOS-lightgrey.svg" alt="platform">
-	</a>
-	<a href="https://img.shields.io/badge/requirements-macOS High Sierra+-ff69b4.svg">
- 		<img src="https://img.shields.io/badge/requirements-macOS High Sierra+-lightgrey.svg" alt="systemrequirements">
-	</a>
-	<a href="https://github.com/sindresorhus/swiftlint-sindre">
- 		<img src="https://img.shields.io/badge/SwiftLint-Sindre-hotpink.svg" alt="swiftlint">
-	</a>
-	<a href="https://opensource.org/licenses/MPL-2.0">
- 		<img src="https://img.shields.io/badge/License-MPL%202.0-orange.svg" alt="license">
-	</a>
-</p>
-<p align="center">
-	<img height="100" min-width="100" src="https://github.com/Mortennn/Dozer/raw/master/Stuff/demo.gif" alt="demo">
+  <img width="160" height="160" src="Stuff/AppIcon.png" alt="Dozer app icon">
 </p>
 
-<p align="center"></p>
-<a href="https://www.buymeacoffee.com/mortennn" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+# Dozer
 
-## ⚙️ Install
-Using [Homebrew Cask](https://formulae.brew.sh/cask/dozer):
-```shell
-brew install --cask dozer
+Hide menu bar icons until you need them. This revival of [Mortennn/Dozer](https://github.com/Mortennn/Dozer) uses native AppKit, a system keyboard shortcut, and macOS login items, with no third-party runtime dependencies.
+
+Requires **macOS 13 or later**. Release builds contain native **Apple Silicon and Intel** executables.
+
+## Build and install
+
+Install Xcode, select it with `xcode-select`, accept its license, and install [XcodeGen](https://github.com/yonaskolb/XcodeGen):
+
+```sh
+brew install xcodegen
+make test
+make install
+open /Applications/Dozer.app
 ```
 
-Manual:
+`make build` creates a Debug app under `build/Build/Products/Debug/`. `make release` creates a universal Release app under `build/Build/Products/Release/`. `make install` builds Release and installs `/Applications/Dozer.app`; quit a running copy first. An existing installed app is backed up under `~/Library/Application Support/Dozer/Backups/` before replacement. Preferences stay in the original `com.mortennn.Dozer` domain.
 
-[Download](https://github.com/Mortennn/Dozer/releases/latest), open and drag the app to the Applications folder.
+These commands use **local ad-hoc signing** and need no paid Apple Developer account. The resulting app is not notarized for distribution. The Xcode project is generated from `project.yml`; no Carthage, CocoaPods, SwiftGen, or old helper-app downloads are needed.
 
-## ⚫️ Dozer Icons
+## Arrange your menu bar
 
-There are 2 or 3, numbered from right to left:
+1. Launch Dozer. A **chevron control** and **divider dot** appear in the menu bar.
+2. Hold **Command (⌘)** and drag the divider dot to the right of the icons you want to hide. Keep the chevron to the right of the divider so it remains accessible.
+3. Click the chevron or divider dot to hide or reveal the group to the divider’s left.
+4. Right-click either control to open Settings. Reopening Dozer from Finder also reveals its controls.
 
-1. this can be positioned anywhere you prefer, it is only a point of interaction
-2. this and everything to its left will be hidden/shown by clicking any Dozer icon
-3. (Optional) the "remove" icon and everything to its left will be hidden/shown by option-clicking any Dozer icon
+Fresh installs register **Control–Option–D (⌃⌥D)** to toggle the hidden group. Change or clear it in Settings. Existing shortcuts are retained when they can be registered; a conflicting shortcut produces an error and leaves the menu control available.
 
-## 👨‍💻 Usage
+Settings include a keyboard shortcut, hiding at launch, auto-hide with a configurable delay, icon sizing, and launch at login. Launch at login is opt-in and uses the actual system login-item status. A keyboard shortcut must be registered before enabling the option to hide both controls.
 
-* Move the icons you want to hide until clicked to the left of the second Dozer icon
-* Move the icons you want to hide until option-clicked to the left of the third Dozer icon
+Enable the optional second, smaller divider dot for an additional hidden group. Place it to the left of the main divider. Option-click the chevron or main divider to reveal this group; ordinary reveal keeps it hidden.
 
-**N.B. hold command (`⌘`) then drag to move the menu bar icons.**
+## How hiding works
 
-## 👇 Interactions
-* Left-click one of the Dozer icons to hide/show the first group of menu bar icons
-* Option-Left-click one of the Dozer icons to show the second group of menu bar icons (optional)
-* Right-click one of the Dozer icons to open the settings
+Dozer expands a divider status item to move the icons on its left out of the visible menu bar. It does not modify other apps or terminate their menu bar items. It requires no screen-recording or Accessibility permission for normal hiding and keyboard shortcuts.
 
-<!-- GIF is commented out until it is redone -->
-<!-- **Checkout [this GIF](https://raw.githubusercontent.com/Mortennn/Dozer/master/Stuff/demo.gif) to watch Dozer in action.** -->
+macOS controls menu bar layout. A display notch, a long application menu, a crowded menu bar, or multiple displays can limit the icons that fit when revealed. Move fewer icons into a group or enable the setting that temporarily shows Dozer's shorter application menu to free space. Some system items cannot be moved. Dozer does not provide a separate overflow panel for icons that do not fit.
 
-## 📄 Requirements
-macOS 10.13+
+The upstream Sparkle updater has been removed so this revived app cannot silently replace itself with the old upstream build. Build updates from this repository.
+
+## Development
+
+```sh
+make project   # Regenerate Dozer.xcodeproj
+make build     # Build and locally sign Debug
+make release   # Build and locally sign universal Release
+make test      # Run Foundation-only state tests, without launching the GUI
+make test-runtime # Run live menu bar and shortcut integration checks (quit Dozer first)
+make install   # Install Release with an existing-app backup
+make run       # Build and launch Debug
+```
+
+Core state tests use Swift Package Manager. The app uses the same source files from `DozerCore/` in its Xcode target.
+
+Run `make test-runtime` from an active macOS desktop session with Dozer quit. The script builds the production sources into a native test executable, creates and removes its own fixture menu items, and verifies real hide/reveal, shortcut recovery, optional groups, and auto-hide behavior. It does not drag, reorder, or remove other applications’ items; its temporary divider can push neighboring items off-screen during a check and restores them afterward. Results and compact geometry diagnostics are saved in `build/runtime-checks.log`. The script refuses to run while Dozer is active to avoid competing global shortcuts.
+
+Check Settings visually and exercise display changes, full-screen Spaces, and wake on the actual hardware when those paths change. The automated checks cover the current desktop configuration.
+
+## License
+
+[Mozilla Public License 2.0](LICENSE). Original Dozer by [Mortennn](https://github.com/Mortennn).

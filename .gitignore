@@ -13,3 +13,9 @@ Gemfile.lock
 
 # Swiftgen
 Dozer/Other/Generated/
+
+# Local Xcode/SwiftPM state
+.DS_Store
+.swiftpm/
+*.xcuserstate
+xcuserdata/

@@ -1,37 +1,30 @@
 # Contributing to Dozer
 
-There are various ways to contribute to Dozer, and all are welcome and appreciated!
+Report problems and propose changes in this repository’s issues. A useful bug report includes the app version, macOS version, Mac architecture, display arrangement, whether a display has a notch, and steps to reproduce the behavior.
 
-- [Bug reports](#bug-reports)
-- [Feature requests](#feature-requests)
-- [Design](#design)
-- [Code](#code)
-    - [Getting started](#getting-started)
-    - [Submitting your pull request](#submitting-your-pull-request)
+## Getting started
 
-## Bug reports
-Open issues about problems you may be encountering. When doing so please mention the version you're using.
+Use macOS 13 or later, a current compatible Xcode installation, and [XcodeGen](https://github.com/yonaskolb/XcodeGen). Select the Xcode installation with `xcode-select` and accept its license before building.
 
-## Feature requests
-If you have a good idea for a feature or enhancement open an issue.
-
-## Design
-Refresh the Dozer icons or logo. [Design resources for logo and status bar icon](https://www.figma.com/file/g5MhiwxR1YFg5vti0tPANa/Dozer).
-
-## Code
-You can submit your own code. This can be bug fixes or new features. Please ask me (@Mortennn) before implementing a new feature. Check out [Issues](https://github.com/Mortennn/Dozer/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc).
-
-### Getting started
-Make sure you have at least Xcode 10 installed.
-
-Run the following command:
-```shell
-git clone https://github.com/mortennn/dozer &&
-cd dozer &&
+```sh
+brew install xcodegen
+make test
 make build
+open build/Build/Products/Debug/Dozer.app
 ```
-Done! The project should open automatically in Xcode.
 
-### Submitting your pull request
-Please give a small summary of what has changed. Also add any github issues links (`Fixes #100`).
-Once your pull request is created, please add a changelog entry to the CHANGELOG.md along with the PR number.
+The build generates `Dozer.xcodeproj` from `project.yml`. Use `make project` to regenerate it after changing sources or project settings, then open that project in Xcode if desired. Generated projects and build products are ignored by Git. Do not add Carthage frameworks or generated asset wrappers; the application uses system frameworks and the asset catalog directly.
+
+`DozerCore/` contains the same state logic compiled into both the app and a SwiftPM library. Put deterministic tests in `Tests/DozerTests/` with `@testable import DozerCore`. `make test` runs these tests without opening a menu bar application. Keep AppKit and GUI behavior in the application target.
+
+Use `make test-runtime` in an active macOS desktop session for production-source integration checks. Quit Dozer first so its registered shortcut does not conflict with the test process. The checks create and remove their own menu items, briefly exercise overflow hiding, and restore visibility before exiting. They never drag or remove another app’s item. Read `build/runtime-checks.log` for the summary and relevant geometry.
+
+## Runtime validation
+
+Use a separate test menu bar item when checking hiding, and restore its original layout afterward. Check ordinary hide/reveal, the optional extra group, shortcut recording and conflicts, no-icon recovery, auto-hide, and reopening the app from Finder. Check wake, display changes, and full-screen Spaces when those affect the change. Record the environments actually tested; a passing state test does not establish visual layout on every display.
+
+`make release` builds a universal Apple Silicon/Intel app. `make install` installs the Release app in `/Applications`, backs up an existing app, and refuses to replace a running copy. Both Debug and Release builds are locally ad-hoc signed; these commands do not notarize or publish the app.
+
+## Pull requests
+
+Explain the concrete problem, resulting behavior, relevant tradeoffs, and validation performed. Link applicable issues and update `CHANGELOG.md` for user-visible changes. Keep changes focused and preserve the Mozilla Public License notices.

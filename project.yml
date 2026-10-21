@@ -3,49 +3,56 @@ options:
   usesTabs: false
   tabWidth: 4
   createIntermediateGroups: true
-  xcodeVersion: 10.2.1
-  deploymentTarget: 10.13
+  xcodeVersion: "16.0"
+  deploymentTarget:
+    macOS: "13.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    ARCHS: "arm64 x86_64"
+    CODE_SIGNING_ALLOWED: NO
+    ENABLE_HARDENED_RUNTIME: YES
+    # Xcode's preview trampoline loads a separate dylib that cannot satisfy
+    # hardened library validation with local ad-hoc signing. Dozer uses AppKit.
+    ENABLE_DEBUG_DYLIB: NO
+    CLANG_ENABLE_MODULES: YES
+    GCC_WARN_UNUSED_VARIABLE: YES
+    SWIFT_EMIT_LOC_STRINGS: NO
 targets:
   Dozer:
     type: application
     platform: macOS
-    deploymentTarget: 
-      macOS: 10.13
+    deploymentTarget: "13.0"
     configFiles:
       Debug: Configs/Debug.xcconfig
       Release: Configs/Release.xcconfig
     sources:
-      - Dozer
-    postBuildScripts:
-      - path: Scripts/LaunchAtLogin.sh
-        name: Launch At Login
-        runOnlyWhenInstalling: true
-      - path: Scripts/SignFrameworks.sh
-        name: Sign Frameworks
-        runOnlyWhenInstalling: true
-        runOnlyWhenInstalling: true
-      - script: /usr/local/bin/swiftgen
-        name: Generate files using SwiftGen
-      - path: Scripts/Swiftlint.sh
-        name: Swiftlint
+      - path: Dozer
+        excludes:
+          - XIB
+          - Other/Generated
+          - Other/bridging-header.h
+          - Other/Info.plist
+          - Other/Dozer.entitlements
+      - path: DozerCore
     settings:
       base:
+        INFOPLIST_FILE: Dozer/Other/Info.plist
         CODE_SIGN_ENTITLEMENTS: Dozer/Other/Dozer.entitlements
-        PRODUCT_BUNDLE_IDENTIFIER: "com.mortennn.Dozer"
-        SWIFT_VERSION: 5
-        DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
-        ENABLE_HARDENED_RUNTIME: true
-        MACOSX_DEPLOYMENT_TARGET: 10.13
+        PRODUCT_BUNDLE_IDENTIFIER: com.mortennn.Dozer
+        PRODUCT_NAME: Dozer
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "5.0.0"
+        CURRENT_PROJECT_VERSION: 31
         VERSIONING_SYSTEM: apple-generic
-        CURRENT_PROJECT_VERSION: 30
-    dependencies:
-      - carthage: LaunchAtLogin
-      - carthage: Defaults
-      - carthage: Preferences
-      - carthage: MASShortcut
-      - carthage: Sparkle
+        COMBINE_HIDPI_IMAGES: YES
 schemes:
   Dozer:
     build:
       targets:
         Dozer: all
+    run:
+      config: Debug
+    archive:
+      config: Release

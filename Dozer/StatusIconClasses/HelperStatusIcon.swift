@@ -1,99 +1,71 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-
+ * License, v. 2.0. https://mozilla.org/MPL/2.0/ */
 import Cocoa
-import Defaults
 
-private struct StatusIconLength {
-    static var show: CGFloat {
-        Defaults[.buttonPadding]
-    }
-    static let hide: CGFloat = 10_000
-}
+/// Keep each named item alive; its role never depends on transient screen coordinates.
+class HelperstatusIcon: NSObject {
+    let role: MenuBarItemRole
+    let statusIcon: NSStatusItem
+    private var expanded = false
+    private var appearanceKey: String?
 
-class HelperstatusIcon {
-    var type: StatusIconType
-
-    let statusIcon: NSStatusItem = NSStatusBar.system.statusItem(withLength: StatusIconLength.show)
-
-    init() {
-        type = .normal
-        statusIcon.length = StatusIconLength.show
-        statusIcon.highlightMode = false
-
-        guard let statusIconButton = statusIcon.button else {
-            fatalError("helper status item button failed")
+    init(role: MenuBarItemRole) {
+        self.role = role
+        statusIcon = NSStatusBar.system.statusItem(withLength: Settings.padding)
+        super.init()
+        statusIcon.autosaveName = "Dozer.\(role.rawValue)"
+        statusIcon.behavior = []
+        statusIcon.isVisible = true
+        if let button = statusIcon.button {
+            button.target = self
+            button.action = #selector(statusIconClicked(_:))
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            button.setAccessibilityIdentifier("dozer.\(role.rawValue)")
+            button.setAccessibilityLabel(role == .control ? "Dozer" : role == .divider ? "Dozer hidden icons divider" : "Dozer extra hidden icons divider")
         }
-
-        statusIconButton.target = self
-        statusIconButton.action = #selector(statusIconClicked(_:))
-        setIcon()
-        statusIconButton.sendAction(on: [.leftMouseDown, .rightMouseDown])
+        update(expanded: false, controlHidden: false)
     }
 
-    deinit {
-        print("status item has been deallocated")
+    func update(expanded: Bool, controlHidden: Bool) {
+        self.expanded = expanded
+        // AppKit imposes a minimum width, so zero length does not actually hide a control.
+        // Preserve its preferred position while temporarily removing it from the menu bar.
+        if role == .control, statusIcon.isVisible == controlHidden {
+            let key = "NSStatusItem Preferred Position Dozer.control"
+            let position = UserDefaults.standard.object(forKey: key)
+            statusIcon.isVisible = !controlHidden
+            if let position { UserDefaults.standard.set(position, forKey: key) }
+        }
+        let hidden = DozerIcons.sharedIfInitialized?.isHidden ?? false
+        let key = "\(expanded)-\(controlHidden)-\(hidden)-\(Settings.iconSize)"
+        if appearanceKey != key {
+            statusIcon.button?.image = expanded || controlHidden ? nil : Icons.image(for: role, hidden: hidden)
+            statusIcon.button?.isEnabled = !expanded && !controlHidden
+            statusIcon.button?.alphaValue = expanded || controlHidden ? 0 : 1
+            statusIcon.button?.toolTip = role == .control
+                ? "Dozer: click to \(hidden ? "show" : "hide") icons. Option-click shows extra icons. Right-click for settings."
+                : "Command-drag icons to the left of this dot to hide them. Right-click for settings."
+            appearanceKey = key
+        }
+        // Update content before length: the remote menu-bar host can otherwise restore intrinsic sizing.
+        let length = expanded ? DozerIcons.hiddenLength : Settings.padding
+        if statusIcon.length != length { statusIcon.length = length }
     }
 
-    func show() {
-        statusIcon.length = StatusIconLength.show
-    }
+    func restoreVisibility() { statusIcon.isVisible = true }
 
-    func hide() {
-        statusIcon.length = StatusIconLength.hide
-    }
-
-    func toggle() {
-        if isShown {
-            hide()
+    @objc func statusIconClicked(_ sender: Any?) {
+        let event = NSApp.currentEvent
+        guard event?.modifierFlags.contains(.command) != true else { return }
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            appDelegate.showSettings()
+        } else if event?.modifierFlags.contains(.option) == true || role == .extraDivider {
+            DozerIcons.shared.handleOptionClick()
         } else {
-            show()
+            DozerIcons.shared.toggle()
         }
     }
 
-    func setIcon() {
-        guard let statusIconButton = statusIcon.button else {
-            fatalError("helper status item button failed")
-        }
-        statusIconButton.image = Icons().helperstatusIcon
-        statusIconButton.image!.isTemplate = true
-    }
-
-    func setSize() {
-        if statusIcon.length != StatusIconLength.hide {
-            statusIcon.length = StatusIconLength.show
-        }
-        guard let statusIconButton = statusIcon.button else {
-            fatalError("helper status item button failed")
-        }
-        let image = statusIconButton.image
-        var size = DozerIcons.shared.iconFontSize
-        if self.type == .remove {
-            size /= 2
-        }
-        image?.size = NSSize(width: size, height: size)
-        statusIconButton.image = image
-    }
-
-    func showRemoveIcons() {}
-
-    @objc
-    func statusIconClicked(_ sender: AnyObject?) {}
-
-    var isShown: Bool {
-        statusIcon.length == StatusIconLength.show
-    }
-
-    var isHidden: Bool {
-        statusIcon.length == StatusIconLength.hide
-    }
-
-    var xPositionOnScreen: CGFloat {
-        guard let dozerIconFrame = statusIcon.button?.window?.frame else {
-            return 0
-        }
-        let dozerIconXPosition = dozerIconFrame.origin.x
-        return dozerIconXPosition
-    }
+    var frame: NSRect? { statusIcon.button?.window?.frame }
+    var isShown: Bool { !expanded }
 }

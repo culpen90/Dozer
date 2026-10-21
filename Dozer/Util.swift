@@ -1,37 +1,28 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-
+ * License, v. 2.0. https://mozilla.org/MPL/2.0/ */
 import Cocoa
-import Defaults
 
 extension NSButton {
     var isChecked: Bool {
-        get {
-            state == .on
-        }
-        set {
-            state = newValue ? .on : .off
-        }
+        get { state == .on }
+        set { state = newValue ? .on : .off }
     }
 }
 
-struct Icons {
-    var helperstatusIcon: NSImage {
-        let size = Defaults[.iconSize]
-        return create(image: Assets.helperStatusItemIcon.name, size, size)
-    }
-
-    var removeStatusIcon: NSImage {
-        let size = Defaults[.iconSize] / 2
-        return create(image: Assets.helperStatusItemIcon.name, size, size)
-    }
-
-    private func create(image name: String, _ width: Int, _ height: Int) -> NSImage {
-        guard let image = Bundle.main.image(forResource: NSImage.Name(name)) else {
-            fatalError("get image failed")
+enum Icons {
+    static func image(for role: MenuBarItemRole, hidden: Bool = false) -> NSImage {
+        let size = CGFloat(Settings.iconSize) * (role == .extraDivider ? 0.6 : 1)
+        let symbol = role == .control ? (hidden ? "chevron.left" : "chevron.right") : "circle.fill"
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            if let symbolImage = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
+                symbolImage.draw(in: rect)
+            } else {
+                NSColor.labelColor.setFill()
+                NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).fill()
+            }
+            return true
         }
-        image.size = NSSize(width: width, height: height)
+        image.isTemplate = true
         return image
     }
 }
