@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var settingsWindowController = SettingsWindowController()
     private var didFinishLaunching = false
     private var reopenObserver: NSObjectProtocol?
+    private let workspaceMenu = WorkspaceMenuController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Settings.registerDefaults()
@@ -26,10 +27,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = DozerIcons.toggleDockIcon(showIcon: false)
         ShortcutManager.shared.start(handler: { DozerIcons.shared.toggle() })
         _ = DozerIcons.shared
+        WindowManager.shared.start()
+        WindowShortcutManager.shared.start()
         didFinishLaunching = true
-        let firstLaunch = !UserDefaults.standard.bool(forKey: "hasCompletedRevivalSetup")
+        let firstLaunch = !UserDefaults.standard.bool(forKey: "hasCompletedWorkspaceSetup")
         if firstLaunch {
             UserDefaults.standard.set(true, forKey: "hasCompletedRevivalSetup")
+            UserDefaults.standard.set(true, forKey: "hasCompletedWorkspaceSetup")
             showSettings()
         } else {
             DozerIcons.shared.hideAtLaunch()
@@ -52,7 +56,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    func showControlMenu(from item: NSStatusItem) {
+        guard let button = item.button else { return }
+        let menu = workspaceMenu.makeMenu()
+        NSMenu.popUpContextMenu(menu, with: NSApp.currentEvent ?? NSEvent(), for: button)
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
+        WindowShortcutManager.shared.stop()
+        WindowManager.shared.stop()
         DozerIcons.sharedIfInitialized?.prepareForTermination()
     }
 
@@ -75,6 +87,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editItem.submenu = edit
         main.addItem(editItem)
+        let windows = NSMenuItem(title: "Windows", action: nil, keyEquivalent: "")
+        windows.submenu = workspaceMenu.makeWindowMenu()
+        main.addItem(windows)
         NSApp.mainMenu = main
     }
 }

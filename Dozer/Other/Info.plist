@@ -27,7 +27,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2020 Mortennn@GitHub. All rights reserved.</string>
+	<string>Dozer © Mortennn and contributors. Includes Rectangle-derived geometry © Ryan Hanson and Eric Czarny.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>LSMultipleInstancesProhibited</key>

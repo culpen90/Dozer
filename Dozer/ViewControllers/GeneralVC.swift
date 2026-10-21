@@ -5,11 +5,11 @@
 import AppKit
 import ServiceManagement
 
-private final class FlippedSettingsView: NSView {
+final class FlippedSettingsView: NSView {
     override var isFlipped: Bool { true }
 }
 
-final class SettingsWindowController: NSWindowController, NSWindowDelegate {
+final class MenuBarSettingsViewController: NSViewController {
     private let loginCheckbox = NSButton(checkboxWithTitle: "Launch Dozer at login", target: nil, action: nil)
     private let loginStatus = NSTextField(wrappingLabelWithString: "")
     private let autoHideCheckbox = NSButton(checkboxWithTitle: "Hide icons automatically after", target: nil, action: nil)
@@ -20,19 +20,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private var observers: [NSObjectProtocol] = []
 
     init() {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 720),
-                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                              backing: .buffered, defer: false)
-        super.init(window: window)
-        window.title = "Dozer Settings"
-        window.identifier = NSUserInterfaceItemIdentifier("DozerSettingsWindow")
-        window.setAccessibilityIdentifier("DozerSettingsWindow")
-        window.minSize = NSSize(width: 560, height: 480)
-        window.setFrameAutosaveName("DozerSettings")
-        window.isReleasedWhenClosed = false
-        window.delegate = self
-        buildContent(in: window)
-        if !window.setFrameUsingName("DozerSettings") { window.center() }
+        super.init(nibName: nil, bundle: nil)
+        buildContent()
         observers.append(NotificationCenter.default.addObserver(forName: .dozerShortcutChanged,
                                                                 object: nil, queue: .main) { [weak self] _ in
             self?.refreshShortcut()
@@ -47,24 +36,22 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     deinit { observers.forEach(NotificationCenter.default.removeObserver) }
 
-    override func showWindow(_ sender: Any?) {
-        super.showWindow(sender)
+    override func viewWillAppear() {
+        super.viewWillAppear()
         refreshLogin()
         refreshShortcut()
-        NSApp.activate(ignoringOtherApps: true)
-        window?.makeKeyAndOrderFront(sender)
     }
 
-    func windowWillClose(_ notification: Notification) { recorder.stopRecording() }
+    func stopRecording() { recorder.stopRecording() }
 
-    private func buildContent(in window: NSWindow) {
+    private func buildContent() {
         let scroll = NSScrollView()
         scroll.hasVerticalScroller = true
         scroll.drawsBackground = false
         let container = FlippedSettingsView()
         container.translatesAutoresizingMaskIntoConstraints = false
         scroll.documentView = container
-        window.contentView = scroll
+        view = scroll
 
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -94,7 +81,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         heading.orientation = .vertical
         heading.alignment = .leading
         heading.spacing = 4
-        let title = NSTextField(labelWithString: "Dozer")
+        let title = NSTextField(labelWithString: "Menu Bar")
         title.font = .systemFont(ofSize: 24, weight: .semibold)
         heading.addArrangedSubview(title)
         heading.addArrangedSubview(caption("A little more room in your menu bar."))
@@ -312,7 +299,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             let alert = NSAlert()
             alert.messageText = "Launch at login could not be changed"
             alert.informativeText = error.localizedDescription
-            if let window { alert.beginSheetModal(for: window) }
+            if let window = view.window { alert.beginSheetModal(for: window) }
         }
         refreshLogin()
     }

@@ -1,3 +1,13 @@
+## 6.0.0 — Dozer Workspace
+
+- Unified native workspace, Menu Bar, Windows, and About pages.
+- Rectangle-derived geometry for 21 window actions, with configurable spacing and display transfer.
+- Configurable global shortcuts, conflict preservation, persistent clears, and safe recorder cleanup.
+- Optional edge/corner drag snapping with a translucent preview and Option bypass.
+- Per-window restore history, including the original frame before a snap drag.
+- Existing menu bar hiding, recovery controls, login items, and preferences retained.
+- Bundled MPL/MIT notices and pinned Rectangle source provenance.
+
 # Changelog
 
 ## Version 5.0.0 (local revival)
