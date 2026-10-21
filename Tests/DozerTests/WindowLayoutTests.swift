@@ -141,6 +141,42 @@ final class WindowLayoutTests: XCTestCase {
         XCTAssertTrue(destination.contains(result))
     }
 
+    func testConstrainedQuarterAlignsAcceptedMinimumSizeToRequestedEdges() throws {
+        let screen = CGRect(x: -1000, y: -800, width: 1000, height: 800)
+        let minimum = CGSize(width: 700, height: 600)
+        let checks: [(WindowLayoutAction, CGPoint)] = [
+            (.bottomRight, CGPoint(x: -708, y: -792)),
+            (.bottomLeft, CGPoint(x: -992, y: -792)),
+            (.topRight, CGPoint(x: -708, y: -608)),
+            (.topLeft, CGPoint(x: -992, y: -608))
+        ]
+        for (action, origin) in checks {
+            let requested = try XCTUnwrap(WindowLayoutGeometry.frame(for: action, window: window, visibleFrame: screen, gap: 8))
+            let constrained = try XCTUnwrap(WindowLayoutGeometry.constrainedFrame(requested: requested,
+                                                    actualSize: minimum, visibleFrame: screen, gap: 8))
+            XCTAssertEqual(constrained.origin, origin, action.title)
+            XCTAssertEqual(constrained.size, minimum)
+            XCTAssertTrue(screen.contains(constrained))
+        }
+    }
+
+    func testConstrainedCenteredWindowRetainsCenterAndOversizedTitleBarStaysReachable() throws {
+        let requested = CGRect(x: -1200, y: -40, width: 400, height: 300)
+        let fitted = try XCTUnwrap(WindowLayoutGeometry.constrainedFrame(requested: requested,
+                                     actualSize: CGSize(width: 800, height: 500), visibleFrame: screen))
+        XCTAssertEqual(fitted.midX, requested.midX)
+        XCTAssertEqual(fitted.midY, requested.midY)
+        XCTAssertTrue(screen.contains(fitted))
+        let oversized = try XCTUnwrap(WindowLayoutGeometry.constrainedFrame(requested: requested,
+                                      actualSize: CGSize(width: 2000, height: 1400), visibleFrame: screen))
+        XCTAssertEqual(oversized.minX, screen.minX)
+        XCTAssertEqual(oversized.maxY, screen.maxY)
+        XCTAssertEqual(oversized.size, CGSize(width: 2000, height: 1400))
+        XCTAssertNil(WindowLayoutGeometry.constrainedFrame(requested: requested, actualSize: .zero, visibleFrame: screen))
+        XCTAssertNil(WindowLayoutGeometry.constrainedFrame(requested: requested,
+                                  actualSize: CGSize(width: CGFloat.infinity, height: 100), visibleFrame: screen))
+    }
+
     func testSnapZonesIncludeExactEdgesCornersAndNegativeCoordinates() {
         let checks: [(CGPoint, WindowLayoutAction)] = [
             (CGPoint(x: screen.minX, y: screen.maxY), .topLeft),

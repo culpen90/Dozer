@@ -1,12 +1,12 @@
 #!/bin/bash
 # A disposable native window for testing the installed Dozer app without moving user windows.
-# Usage: Scripts/RunWindowFixture.sh [--build-only]
+# Usage: Scripts/RunWindowFixture.sh [--build-only | --large-minimum]
 # Read build/window-fixture-frame.json for authoritative AppKit and Accessibility geometry.
 # Close the fixture window or press Command-Q to quit; no permissions or network are used.
 set -euo pipefail
 
-if [[ $# -gt 1 || ( $# -eq 1 && "$1" != '--build-only' ) ]]; then
-    echo 'Usage: Scripts/RunWindowFixture.sh [--build-only]' >&2
+if [[ $# -gt 1 || ( $# -eq 1 && "$1" != '--build-only' && "$1" != '--large-minimum' ) ]]; then
+    echo 'Usage: Scripts/RunWindowFixture.sh [--build-only | --large-minimum]' >&2
     exit 1
 fi
 if /usr/bin/pgrep -x DozerWindowFixture >/dev/null; then
@@ -45,5 +45,5 @@ PLIST
 echo "Fixture app: $fixture_app"
 echo "Frame log: $frame_log"
 if [[ "${1:-}" != '--build-only' ]]; then
-    /usr/bin/open "$fixture_app" --args --frame-log "$frame_log"
+    /usr/bin/open "$fixture_app" --args --frame-log "$frame_log" "${1:-}"
 fi

@@ -1,6 +1,6 @@
 DOZER + RECTANGLE
 
-This independent app combines Dozer menu bar management with window geometry adapted from Rectangle.
+This independent app combines Dozer menu bar management with window geometry and native Accessibility adjustments adapted from Rectangle.
 
 Rectangle and Spectacle
 ======================
@@ -72,6 +72,18 @@ preferences, AppKit interface, accessibility adapter, and shortcut integration a
 Dozer integration code. This is a scoped integration of Rectangle geometry, not
 all Rectangle features. It does not embed Rectangle's app delegate, updater,
 MASShortcut dependency, settings, private window-ID bridge, or app bundle.
+
+`Dozer/WindowManagement/RectangleWindowAdjustment.swift` additionally adapts
+`Rectangle/AccessibilityElement.swift`, specifically `performFrameAdjustment()`
+and `EnhancedUI.performWindowAdjustment()` / `beginWindowAdjustment()`, inspected
+at local revision `be974d9b500187aaa37ad7342f84df24d2027f96`. The helper temporarily
+disables an already-enabled `AXEnhancedUserInterface` application attribute during
+a synchronous size/position adjustment and restores the original true value with
+`defer`. Unlike Rectangle's preference-dependent modes, Dozer always attempts to
+restore the original true state, including after a failed attribute write or a
+throwing adjustment. It skips attribute changes entirely while VoiceOver or
+Switch Control is active, and leaves unknown or false states unchanged. The
+helper uses injectable read/write closures for permission-free native checks.
 
 Dozer — Mozilla Public License 2.0
 =================================

@@ -13,6 +13,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let menuStatus = NSTextField(labelWithString: "")
     private let windowStatus = NSTextField(labelWithString: "")
     private let targetLabel = NSTextField(labelWithString: "")
+    private let targetPopup = NSPopUpButton()
+    private var applicationList: [String] = []
     private let resultLabel = NSTextField(wrappingLabelWithString: "")
     private let permissionStatus = NSTextField(wrappingLabelWithString: "")
     private let permissionButton = NSButton(title: "Enable Accessibility…", target: nil, action: nil)
@@ -158,8 +160,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         statusRow.addArrangedSubview(card(windowCard))
         addFullWidth(statusRow, to: stack)
         targetLabel.font = .systemFont(ofSize: 17, weight: .semibold)
+        targetPopup.setAccessibilityIdentifier("workspace.targetApplication")
+        targetPopup.setAccessibilityLabel("Application to arrange")
+        targetPopup.target = self
+        targetPopup.action = #selector(changeTarget)
         stack.addArrangedSubview(targetLabel)
-        stack.addArrangedSubview(caption("Pick a layout for your last active app, or use a shortcut from anywhere."))
+        addFullWidth(horizontal([label("Apply to", size: 13), targetPopup]), to: stack)
+        stack.addArrangedSubview(caption("Pick an app and a layout. Global shortcuts always use your active app."))
         let actions: [WindowLayoutAction] = [.leftHalf, .maximize, .rightHalf,
                                            .topLeft, .center, .topRight,
                                            .bottomLeft, .restore, .bottomRight,
@@ -259,7 +266,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let version = AppInfo.releaseVersionNumber ?? ""
         stack.addArrangedSubview(caption("Version \(version) · Local build"))
         stack.addArrangedSubview(label("Two great ideas, together", size: 18, weight: .semibold))
-        stack.addArrangedSubview(copy("Dozer’s menu bar hiding is combined with window layout geometry adapted from Rectangle. Window movement, shortcuts, previews, and settings run inside this app."))
+        stack.addArrangedSubview(copy("Dozer’s menu bar hiding is combined with window geometry and native accessibility adjustments adapted from Rectangle. Window movement, shortcuts, previews, and settings run inside this app."))
         stack.addArrangedSubview(copy("Original Dozer by Mortennn, licensed under MPL 2.0. Rectangle by Ryan Hanson, based on Spectacle by Eric Czarny, licensed under MIT. This combined app is an independent project."))
         for (title, url) in [("Dozer Source", "https://github.com/culpen90/Dozer"),
                              ("Rectangle Source", "https://github.com/rxhanson/Rectangle")] {
@@ -284,6 +291,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         toggleIconsButton.title = DozerIcons.shared.isHidden ? "Show Icons" : "Hide Icons"
         windowStatus.stringValue = !manager.isEnabled ? "Paused" : manager.isTrusted ? "Ready to arrange" : "Access needed"
         targetLabel.stringValue = manager.targetApplicationName.map { "Arrange \($0)" } ?? "Your favorite layouts"
+        refreshTargets()
         resultLabel.stringValue = manager.lastMessage ?? "Start with ⌃⌥← and ⌃⌥→ for side-by-side windows."
         permissionStatus.stringValue = manager.isTrusted
             ? (manager.isEnabled ? "Accessibility is enabled. Your window layouts and drag snapping are ready." : "Accessibility is enabled. Window management is paused.")
@@ -311,7 +319,51 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
     @objc private func toggleIcons() { DozerIcons.shared.toggle() }
     @objc private func openWindows() { selectPage(2) }
-    @objc private func runLayout(_ sender: LayoutTileButton) { stopRecording(); WindowManager.shared.execute(sender.layoutAction) }
+    @objc private func runLayout(_ sender: LayoutTileButton) {
+        stopRecording()
+        let manager = WindowManager.shared
+        guard manager.isEnabled && manager.isTrusted else {
+            manager.execute(sender.layoutAction)
+            return
+        }
+        if let identifier = targetPopup.selectedItem?.representedObject as? NSNumber {
+            guard let app = NSRunningApplication(processIdentifier: identifier.int32Value), !app.isTerminated,
+                  let target = manager.focusedWindow(in: app) else {
+                resultLabel.stringValue = "Select a normal, non-full-screen window in this app, then try again."
+                return
+            }
+            manager.execute(sender.layoutAction, target: target)
+        } else {
+            manager.execute(sender.layoutAction)
+        }
+    }
+    @objc private func changeTarget() {
+        if let identifier = targetPopup.selectedItem?.representedObject as? NSNumber,
+           let name = NSRunningApplication(processIdentifier: identifier.int32Value)?.localizedName {
+            targetLabel.stringValue = "Arrange \(name)"
+        } else {
+            targetLabel.stringValue = WindowManager.shared.targetApplicationName.map { "Arrange \($0)" } ?? "Your favorite layouts"
+        }
+    }
+    private func refreshTargets() {
+        let apps = NSWorkspace.shared.runningApplications.filter {
+            $0.activationPolicy == .regular && !$0.isTerminated &&
+                $0.processIdentifier != ProcessInfo.processInfo.processIdentifier
+        }.sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+        let identifiers = apps.map { "\($0.processIdentifier):\($0.localizedName ?? "")" }
+        if identifiers != applicationList {
+            applicationList = identifiers
+            let previous = (targetPopup.selectedItem?.representedObject as? NSNumber)?.int32Value
+            targetPopup.removeAllItems()
+            targetPopup.addItem(withTitle: "Last active app")
+            for app in apps {
+                targetPopup.addItem(withTitle: app.localizedName ?? "Application")
+                targetPopup.lastItem?.representedObject = NSNumber(value: app.processIdentifier)
+                if previous == app.processIdentifier { targetPopup.select(targetPopup.lastItem) }
+            }
+        }
+        changeTarget()
+    }
     @objc private func requestPermission() { WindowManager.shared.requestPermission() }
     @objc private func toggleWindowManagement() {
         stopRecording()

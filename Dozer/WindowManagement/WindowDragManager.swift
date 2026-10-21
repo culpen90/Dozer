@@ -50,11 +50,25 @@ final class WindowDragManager {
             preview?.orderOut(nil)
         }
         switch event.type {
-        case .leftMouseDown: begin(at: NSEvent.mouseLocation, event: event)
-        case .leftMouseDragged: update(at: NSEvent.mouseLocation)
-        case .leftMouseUp: finish()
+        case .leftMouseDown:
+            guard let point = location(of: event) else { cancelDrag(); return }
+            begin(at: point, event: event)
+        case .leftMouseDragged:
+            guard let point = location(of: event) else { cancelDrag(); return }
+            update(at: point)
+        case .leftMouseUp:
+            guard let point = location(of: event) else { cancelDrag(); return }
+            finish(at: point, modifiers: event.modifierFlags)
         default: break
         }
+    }
+
+    private func location(of event: NSEvent) -> CGPoint? {
+        // A global monitor can deliver after the pointer has moved again. Use
+        // this event's Quartz position, never the current global cursor state.
+        guard let point = event.cgEvent?.location, point.x.isFinite, point.y.isFinite,
+              let primary = NSScreen.screens.first else { return nil }
+        return CGPoint(x: point.x, y: primary.frame.maxY - point.y)
     }
 
     private func begin(at point: CGPoint, event: NSEvent) {
@@ -102,14 +116,14 @@ final class WindowDragManager {
         showPreview(destination)
     }
 
-    private func finish() {
-        update(at: NSEvent.mouseLocation)
+    private func finish(at point: CGPoint, modifiers: NSEvent.ModifierFlags) {
+        update(at: point)
         let completedSession = session
         let completedCandidate = candidate
         cancelDrag()
         guard let completedSession, completedSession.hasMoved, !completedSession.cancelled,
               let completedCandidate,
-              !NSEvent.modifierFlags.contains(.option) else { return }
+              !modifiers.contains(.option) else { return }
         manager.execute(completedCandidate.action, target: completedSession.target, screen: completedCandidate.screen,
                         restoreFrame: completedSession.initialFrame)
     }

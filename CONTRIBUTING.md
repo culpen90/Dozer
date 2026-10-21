@@ -21,7 +21,9 @@ Use `make test-runtime` in an active macOS desktop session for production-source
 
 Use `make test-window-shortcuts` with Dozer and other window managers quit for real Carbon registration checks. It compiles the production shortcut/recorder sources, uses an isolated preference suite, and never moves an application window or asks for Accessibility. Results are in `build/window-shortcut-checks.log`.
 
-For live placement tests, build/install Dozer and explicitly enable its Accessibility permission. Run `Scripts/RunWindowFixture.sh` to open a disposable native window rather than moving personal windows. Its current AppKit/Accessibility frame and screen geometry are recorded in `build/window-fixture-frame.json`. Use Dozer shortcuts, layout buttons, drag snapping, Option bypass, and restore; close the fixture when finished. `--build-only` compiles the fixture without launching it.
+For live placement tests, build/install Dozer and explicitly enable its Accessibility permission. Run `Scripts/RunWindowFixture.sh` to open a disposable native window rather than moving personal windows. Its current AppKit/Accessibility frame and screen geometry are recorded in `build/window-fixture-frame.json`. Use Dozer shortcuts, layout buttons, drag snapping, Option bypass, and restore; close the fixture when finished. `--build-only` compiles the fixture without launching it; `--large-minimum` launches it with a 1000 × 700 minimum size for constrained placement checks.
+
+The optional `Scripts/RunWindowInputCheck.sh` helper posts native events only after the operator explicitly opts in with `--allow-native-input`. Pass the running fixture's `--pid` and one `--action`: `shortcut-left`, `drag-left`, or `option-drag-left`. It checks the exact fixture executable and window, requires existing event-posting access, activates the fixture, and aborts on focus loss. Keep physical input idle during a check. Read its preview diagnostics and independently verify the frame log; event posting alone is not a passing placement check.
 
 ## Runtime validation
 

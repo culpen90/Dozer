@@ -22,6 +22,35 @@ func runChecks() {
     defer { manager.stop() }
     manager.start()
     check(WindowLayoutAction.allCases.allSatisfy(manager.isRegistered), "all 21 default shortcuts register")
+
+    // A fresh manager assigns identifier 1 to the first declared action,
+    // .leftHalf. Deliver only to this fixture's application event target;
+    // this never enters the system keyboard stream or arranges a real window.
+    func deliverInitialLeftHalfEvent() -> OSStatus {
+        var event: EventRef?
+        let creation = CreateEvent(nil, OSType(kEventClassKeyboard), UInt32(kEventHotKeyPressed),
+                                   GetCurrentEventTime(), 0, &event)
+        guard creation == noErr, let event else { return creation }
+        defer { ReleaseEvent(event) }
+        var identifier = EventHotKeyID(signature: 0x445A574E, id: 1) // DZWN
+        let parameter = SetEventParameter(event, EventParamName(kEventParamDirectObject),
+                                           EventParamType(typeEventHotKeyID),
+                                           MemoryLayout<EventHotKeyID>.size, &identifier)
+        guard parameter == noErr else { return parameter }
+        return SendEventToEventTarget(event, GetApplicationEventTarget())
+    }
+    var dispatched: [WindowLayoutAction] = []
+    manager.actionHandler = { dispatched.append($0) }
+    check(deliverInitialLeftHalfEvent() == noErr && dispatched == [.leftHalf],
+          "Carbon hot-key event dispatches the selected window action")
+    var captured: [KeyboardShortcut] = []
+    manager.recordingHandler = { captured.append($0) }
+    check(deliverInitialLeftHalfEvent() == noErr && captured == [manager.shortcut(for: .leftHalf)!] &&
+          dispatched == [.leftHalf], "recording intercepts Carbon hot keys without dispatching window actions")
+    manager.recordingHandler = nil
+    check(deliverInitialLeftHalfEvent() == noErr && dispatched == [.leftHalf, .leftHalf],
+          "ending capture restores Carbon action dispatch")
+
     let original = manager.shortcut(for: .leftHalf)
     check(!manager.setShortcut(manager.shortcut(for: .rightHalf), for: .leftHalf), "duplicate shortcut is rejected")
     check(manager.shortcut(for: .leftHalf) == original && manager.isRegistered(.leftHalf), "duplicate preserves working binding")

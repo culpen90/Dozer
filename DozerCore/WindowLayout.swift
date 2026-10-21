@@ -160,6 +160,37 @@ enum WindowLayoutGeometry {
         return isUsable(result) ? contained(result, in: destination) : centered(size: window.size, in: destination)
     }
 
+    /// An application can accept a different size from the requested layout. Keep
+    /// that accepted size on screen and attached to the requested edge. If the
+    /// application's minimum exceeds the display, keep its title bar reachable.
+    static func constrainedFrame(requested: CGRect, actualSize: CGSize,
+                                 visibleFrame screen: CGRect, gap: CGFloat = 0) -> CGRect? {
+        guard isUsable(requested), isUsable(screen),
+              actualSize.width.isFinite, actualSize.height.isFinite,
+              actualSize.width > 0, actualSize.height > 0 else { return nil }
+        let tolerance: CGFloat = 4 + (gap.isFinite ? max(0, min(gap, min(screen.width, screen.height) / 4)) : 0)
+        func origin(requested: Span, actualLength: CGFloat, screen: Span, keepEndWhenOversized: Bool) -> CGFloat {
+            let slack = screen.length - actualLength
+            guard slack >= 0 else {
+                return keepEndWhenOversized ? screen.origin + screen.length - actualLength : screen.origin
+            }
+            let startInset = requested.origin - screen.origin
+            let endInset = screen.origin + screen.length - requested.origin - requested.length
+            let againstStart = startInset <= tolerance
+            let againstEnd = endInset <= tolerance
+            if againstStart && !againstEnd { return screen.origin + clamp(startInset, 0, slack) }
+            if againstEnd && !againstStart { return screen.origin + slack - clamp(endInset, 0, slack) }
+            let centeredOrigin = requested.origin + requested.length / 2 - actualLength / 2
+            return clamp(centeredOrigin, screen.origin, screen.origin + slack)
+        }
+        let rect = CGRect(x: origin(requested: (requested.minX, requested.width), actualLength: actualSize.width,
+                                    screen: (screen.minX, screen.width), keepEndWhenOversized: false),
+                          y: origin(requested: (requested.minY, requested.height), actualLength: actualSize.height,
+                                    screen: (screen.minY, screen.height), keepEndWhenOversized: true),
+                          width: actualSize.width, height: actualSize.height)
+        return isUsable(rect) ? rect : nil
+    }
+
     static func snapAction(at point: CGPoint, in frame: CGRect,
                            threshold: CGFloat = 18) -> WindowLayoutAction? {
         guard isUsable(frame), point.x.isFinite, point.y.isFinite, threshold.isFinite, threshold > 0,

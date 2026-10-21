@@ -26,6 +26,7 @@ echo 'Building native window shortcut checks from production sources…'
     "$repository_root/Dozer/WindowManagement/WindowShortcutRecorder.swift" \
     "$repository_root/Dozer/WindowManagement/WindowManager.swift" \
     "$repository_root/Dozer/WindowManagement/WindowDragManager.swift" \
+    "$repository_root/Dozer/WindowManagement/RectangleWindowAdjustment.swift" \
     "$repository_root/DozerCore/WindowLayout.swift" \
     "$repository_root/Tests/WindowShortcutChecks/main.swift" \
     -framework AppKit -framework Carbon -framework ApplicationServices \

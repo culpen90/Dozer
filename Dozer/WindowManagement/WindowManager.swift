@@ -28,8 +28,7 @@ final class WindowManager {
     private var permissionTimer: Timer?
     private var started = false
     private var placementGeneration: UInt64 = 0
-    private var pendingTarget: ManagedWindowTarget?
-    private var queuedPlacement: QueuedPlacement?
+    private var pendingPlacements: [WindowIdentity: PendingPlacement] = [:]
     private var histories: [WindowHistory] = []
     private lazy var dragging = WindowDragManager(manager: self)
     private let defaults = UserDefaults.standard
@@ -37,6 +36,7 @@ final class WindowManager {
     private struct WindowHistory {
         let target: ManagedWindowTarget
         var frames: [CGRect]
+        var placementUnconfirmed = false
     }
 
     private struct QueuedPlacement {
@@ -44,6 +44,35 @@ final class WindowManager {
         let target: ManagedWindowTarget
         let screen: NSScreen?
         let restoreFrame: CGRect?
+    }
+
+    private struct WindowIdentity: Hashable {
+        let target: ManagedWindowTarget
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            lhs.target.processIdentifier == rhs.target.processIdentifier && CFEqual(lhs.target.element, rhs.target.element)
+        }
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(target.processIdentifier)
+            hasher.combine(CFHash(target.element))
+        }
+    }
+
+    private struct PendingPlacement {
+        let generation: UInt64
+        var queued: QueuedPlacement?
+    }
+
+    private struct PlacementResult {
+        let generation: UInt64
+        let action: WindowLayoutAction
+        let target: ManagedWindowTarget
+        let destination: CGRect
+        let visibleFrame: CGRect
+        let gap: CGFloat
+        let restoring: Bool
+        let baseline: CGRect
+        let initialPosition: CGPoint
+        var lastPosition: CGPoint
     }
 
     private init() {
@@ -111,7 +140,10 @@ final class WindowManager {
         }
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
-        ) { [weak self] _ in self?.dragging.cancelDrag() }
+        ) { [weak self] _ in
+            self?.dragging.cancelDrag()
+            self?.cancelPendingPlacement()
+        }
         activeObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in self?.refreshPermission() }
@@ -176,14 +208,14 @@ final class WindowManager {
     func execute(_ action: WindowLayoutAction, target: ManagedWindowTarget, screen: NSScreen? = nil,
                  restoreFrame: CGRect? = nil) {
         guard readyToArrange() else { return }
-        if let pendingTarget, sameWindow(pendingTarget, target) {
+        let identity = WindowIdentity(target: target)
+        if var pending = pendingPlacements[identity] {
             // An immediate restore must wait until an asynchronous resize has
             // settled. Keep the latest requested action rather than race AX writes.
-            queuedPlacement = QueuedPlacement(action: action, target: target, screen: screen, restoreFrame: restoreFrame)
+            pending.queued = QueuedPlacement(action: action, target: target, screen: screen, restoreFrame: restoreFrame)
+            pendingPlacements[identity] = pending
             return
         }
-        pendingTarget = nil
-        queuedPlacement = nil
         placementGeneration &+= 1
         let generation = placementGeneration
         guard isEligible(target), let current = frame(of: target), !NSScreen.screens.isEmpty else {
@@ -194,6 +226,7 @@ final class WindowManager {
         let index = WindowLayoutGeometry.screenIndex(for: current, screens: screens.map(\.frame)) ?? 0
         let source = screen.flatMap { requested in screens.first(where: { $0 === requested }) } ?? screens[index]
         let destination: CGRect
+        let destinationVisibleFrame: CGRect
         var restoring = false
         switch action {
         case .restore:
@@ -211,6 +244,8 @@ final class WindowManager {
                 destination = WindowLayoutGeometry.frame(for: .center, window: previous,
                                                           visibleFrame: source.visibleFrame, gap: 0) ?? source.visibleFrame
             }
+            let restoredIndex = WindowLayoutGeometry.screenIndex(for: destination, screens: visibleFrames) ?? index
+            destinationVisibleFrame = visibleFrames[restoredIndex]
             restoring = true
         case .nextDisplay, .previousDisplay:
             guard screens.count > 1 else {
@@ -222,10 +257,12 @@ final class WindowManager {
             destination = WindowLayoutGeometry.movedFrame(window: current,
                                                           from: screens[index].visibleFrame,
                                                           to: next.visibleFrame, gap: gap)
+            destinationVisibleFrame = next.visibleFrame
         default:
             guard let calculated = WindowLayoutGeometry.frame(for: action, window: current,
                                                                visibleFrame: source.visibleFrame, gap: gap) else { return }
             destination = calculated
+            destinationVisibleFrame = source.visibleFrame
         }
 
         guard destination.width > 0, destination.height > 0,
@@ -244,6 +281,10 @@ final class WindowManager {
         }
         if framesMatch(current, destination) {
             if restoring, let historyIndex = historyIndex(for: target) {
+                guard !histories[historyIndex].placementUnconfirmed else {
+                    report("The earlier window adjustment has not settled. Try Restore again.")
+                    return
+                }
                 histories[historyIndex].frames.removeLast()
             } else if let restoreFrame, !framesMatch(restoreFrame, current) {
                 remember(restoreFrame, for: target)
@@ -255,34 +296,140 @@ final class WindowManager {
         let baseline = restoreFrame ?? current
         // Capture the original before issuing AX writes. Some applications apply
         // them asynchronously; the window must remain recoverable in the meantime.
-        let appendedHistory = !restoring && remember(baseline, for: target)
-        _ = setFrame(destination, of: target, resize: changesSize)
+        if !restoring { remember(baseline, for: target) }
+        if let index = historyIndex(for: target) { histories[index].placementUnconfirmed = true }
+        let edgeGap: CGFloat = restoring ? 0 : gap
+        // Each window settles independently. Commands for another window must
+        // not discard this window's queued restore or its history update.
+        pendingPlacements[identity] = PendingPlacement(generation: generation)
+        var result = PlacementResult(generation: generation, action: action, target: target,
+                                     destination: destination, visibleFrame: destinationVisibleFrame,
+                                     gap: edgeGap, restoring: restoring, baseline: baseline,
+                                     initialPosition: CGPoint(x: current.minX, y: current.maxY),
+                                     lastPosition: CGPoint(x: current.minX, y: current.maxY))
+        if changesSize {
+            // Rectangle suppresses native AX animation within this synchronous
+            // size-position-size adjustment, then restores Enhanced UI. Keep
+            // the staged path for applications that still constrain or defer it.
+            _ = setFrame(destination, of: target)
+            result.lastPosition = CGPoint(x: destination.minX, y: destination.maxY)
+            if let actual = frame(of: target), framesMatch(actual, destination, tolerance: 3) {
+                pendingPlacements.removeValue(forKey: identity)
+                finishPlacement(action, target: target, restoring: restoring)
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                self?.moveAfterResize(result)
+            }
+            return
+        }
+        _ = setPosition(destination, of: target)
+        result.lastPosition = CGPoint(x: destination.minX, y: destination.maxY)
         if let actual = frame(of: target), framesMatch(actual, destination, tolerance: 3) {
+            pendingPlacements.removeValue(forKey: identity)
             finishPlacement(action, target: target, restoring: restoring)
             return
         }
-        // AX setters can acknowledge before a toolkit updates its reported frame.
-        // A newer command owns the status message and history once it is issued.
-        pendingTarget = target
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-            guard let self, self.placementGeneration == generation else { return }
-            self.pendingTarget = nil
-            if let actual = self.frame(of: target), self.framesMatch(actual, destination, tolerance: 3) {
-                self.finishPlacement(action, target: target, restoring: restoring)
-            } else {
-                if appendedHistory, let actual = self.frame(of: target),
-                   self.framesMatch(actual, baseline), let index = self.historyIndex(for: target),
-                   self.histories[index].frames.last == baseline {
-                    self.histories[index].frames.removeLast()
-                }
-                // A partial restore keeps its original history entry so retrying
-                // restore never replaces the desired frame with a partial result.
-                self.report("\(target.applicationName) limited the requested size or position.")
+            self?.settlePlacement(result, remainingPolls: 4, correctionAttempts: 2)
+        }
+    }
+
+    private func moveAfterResize(_ result: PlacementResult) {
+        let identity = WindowIdentity(target: result.target)
+        guard pendingPlacements[identity]?.generation == result.generation else { return }
+        guard let actual = frame(of: result.target), positionIsOurs(actual, result: result) else {
+            settlePlacement(result, remainingPolls: 0, correctionAttempts: 0)
+            return
+        }
+        _ = setPosition(result.destination, of: result.target)
+        var moved = result
+        moved.lastPosition = CGPoint(x: result.destination.minX, y: result.destination.maxY)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            self?.resizeAfterMove(moved, movementRetries: 1)
+        }
+    }
+
+    private func resizeAfterMove(_ result: PlacementResult, movementRetries: Int) {
+        let identity = WindowIdentity(target: result.target)
+        guard pendingPlacements[identity]?.generation == result.generation else { return }
+        guard let actual = frame(of: result.target), positionIsOurs(actual, result: result) else {
+            settlePlacement(result, remainingPolls: 0, correctionAttempts: 0)
+            return
+        }
+        if !positionMatches(actual, result.lastPosition), movementRetries > 0 {
+            // The first move may still have coincided with the resize ending.
+            // Retry only from the original or already-issued position.
+            _ = setPosition(result.destination, of: result.target)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                self?.resizeAfterMove(result, movementRetries: movementRetries - 1)
             }
-            if let next = self.queuedPlacement {
-                self.queuedPlacement = nil
-                self.execute(next.action, target: next.target, screen: next.screen, restoreFrame: next.restoreFrame)
+            return
+        }
+        if positionMatches(actual, result.lastPosition) {
+            // At the destination origin a size clipped by the previous screen
+            // edge can now grow to the full requested dimensions.
+            _ = setSize(result.destination.size, of: result.target)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            self?.settlePlacement(result, remainingPolls: 4, correctionAttempts: 2)
+        }
+    }
+
+    private func positionMatches(_ frame: CGRect, _ position: CGPoint) -> Bool {
+        abs(frame.minX - position.x) <= 3 && abs(frame.maxY - position.y) <= 3
+    }
+
+    private func positionIsOurs(_ frame: CGRect, result: PlacementResult) -> Bool {
+        positionMatches(frame, result.lastPosition) || positionMatches(frame, result.initialPosition)
+    }
+
+    private func settlePlacement(_ result: PlacementResult, remainingPolls: Int, correctionAttempts: Int) {
+        let identity = WindowIdentity(target: result.target)
+        guard pendingPlacements[identity]?.generation == result.generation else { return }
+        let actual = frame(of: result.target)
+        let succeeded = actual.map { framesMatch($0, result.destination, tolerance: 3) } ?? false
+        if !succeeded, correctionAttempts > 0, let actual,
+           positionIsOurs(actual, result: result),
+           let fitted = sizesMatch(actual.size, result.destination.size) ? result.destination
+                : WindowLayoutGeometry.constrainedFrame(requested: result.destination,
+                                     actualSize: actual.size, visibleFrame: result.visibleFrame, gap: result.gap),
+           !framesMatch(actual, fitted) {
+            // A rejected or clamped size can leave the requested origin outside
+            // the usable display. Position the accepted size, then let that AX
+            // write settle before a queued action starts using its frame.
+            _ = setPosition(fitted, of: result.target)
+            var corrected = result
+            corrected.lastPosition = CGPoint(x: fitted.minX, y: fitted.maxY)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                self?.settlePlacement(corrected, remainingPolls: remainingPolls,
+                                       correctionAttempts: correctionAttempts - 1)
             }
+            return
+        }
+        if !succeeded, remainingPolls > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                self?.settlePlacement(result, remainingPolls: remainingPolls - 1,
+                                       correctionAttempts: correctionAttempts)
+            }
+            return
+        }
+        let queued = pendingPlacements.removeValue(forKey: identity)?.queued
+        if succeeded {
+            finishPlacement(result.action, target: result.target, restoring: result.restoring,
+                            reportResult: result.generation == placementGeneration)
+        } else if result.generation == placementGeneration {
+            // Keep the baseline even if AX still reports the old frame: an
+            // acknowledged toolkit write can apply after this observation.
+            // A failed restore also retains its desired history entry for retry.
+            report("\(result.target.applicationName) limited the requested size or position.")
+        }
+        if !succeeded, let actual, !framesMatch(actual, result.baseline),
+           let index = historyIndex(for: result.target) {
+            histories[index].placementUnconfirmed = false
+        }
+        if let queued {
+            execute(queued.action, target: queued.target, screen: queued.screen, restoreFrame: queued.restoreFrame)
         }
     }
 
@@ -290,9 +437,19 @@ final class WindowManager {
         guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier, !app.isTerminated else { return nil }
         let application = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(application, 0.25)
-        guard let value = copyAttribute(kAXFocusedWindowAttribute, from: application),
-              CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
-        let target = ManagedWindowTarget(element: value as! AXUIElement,
+        var windowValue = copyAttribute(kAXFocusedWindowAttribute, from: application)
+        if windowValue.map({ CFGetTypeID($0) != AXUIElementGetTypeID() }) ?? true {
+            // A selected background application may expose only its main window.
+            // The fallback stays within that application; it never selects the
+            // frontmost window belonging to some other process.
+            windowValue = copyAttribute(kAXMainWindowAttribute, from: application)
+        }
+        guard let windowValue, CFGetTypeID(windowValue) == AXUIElementGetTypeID() else { return nil }
+        let element = windowValue as! AXUIElement
+        var windowPID: pid_t = 0
+        guard AXUIElementGetPid(element, &windowPID) == .success,
+              windowPID == app.processIdentifier else { return nil }
+        let target = ManagedWindowTarget(element: element,
                                          processIdentifier: app.processIdentifier,
                                          applicationName: app.localizedName ?? "Application")
         AXUIElementSetMessagingTimeout(target.element, 0.25)
@@ -354,16 +511,41 @@ final class WindowManager {
     private var desktopTop: CGFloat { NSScreen.screens.first?.frame.maxY ?? 0 }
     private func accessibilityPoint(_ point: CGPoint) -> CGPoint { CGPoint(x: point.x, y: desktopTop - point.y) }
 
-    private func setFrame(_ frame: CGRect, of target: ManagedWindowTarget, resize: Bool) -> Bool {
+    private func setFrame(_ frame: CGRect, of target: ManagedWindowTarget) -> Bool {
+        RectangleWindowAdjustment.perform(for: target.element) {
+            let firstResize = setSizeDirectly(frame.size, of: target)
+            let movement = setPositionDirectly(frame, of: target)
+            let secondResize = setSizeDirectly(frame.size, of: target)
+            return firstResize && movement && secondResize
+        }
+    }
+
+    private func setSize(_ requestedSize: CGSize, of target: ManagedWindowTarget) -> Bool {
+        RectangleWindowAdjustment.perform(for: target.element) {
+            setSizeDirectly(requestedSize, of: target)
+        }
+    }
+
+    private func setSizeDirectly(_ requestedSize: CGSize, of target: ManagedWindowTarget) -> Bool {
+        var size = requestedSize
+        guard let dimensions = AXValueCreate(.cgSize, &size) else { return false }
+        return AXUIElementSetAttributeValue(target.element, kAXSizeAttribute as CFString, dimensions) == .success
+    }
+
+    private func setPosition(_ frame: CGRect, of target: ManagedWindowTarget) -> Bool {
+        RectangleWindowAdjustment.perform(for: target.element) {
+            setPositionDirectly(frame, of: target)
+        }
+    }
+
+    private func setPositionDirectly(_ frame: CGRect, of target: ManagedWindowTarget) -> Bool {
         var point = CGPoint(x: frame.minX, y: desktopTop - frame.maxY)
-        var size = frame.size
-        guard let position = AXValueCreate(.cgPoint, &point), let dimensions = AXValueCreate(.cgSize, &size) else { return false }
-        // Some applications constrain movement using their old size. Resize both
-        // before and after positioning so a smaller destination screen works too.
-        let firstResize = resize ? AXUIElementSetAttributeValue(target.element, kAXSizeAttribute as CFString, dimensions) : .success
-        let movement = AXUIElementSetAttributeValue(target.element, kAXPositionAttribute as CFString, position)
-        let secondResize = resize ? AXUIElementSetAttributeValue(target.element, kAXSizeAttribute as CFString, dimensions) : .success
-        return firstResize == .success && movement == .success && secondResize == .success
+        guard let position = AXValueCreate(.cgPoint, &point) else { return false }
+        return AXUIElementSetAttributeValue(target.element, kAXPositionAttribute as CFString, position) == .success
+    }
+
+    private func sizesMatch(_ lhs: CGSize, _ rhs: CGSize, tolerance: CGFloat = 1) -> Bool {
+        abs(lhs.width - rhs.width) <= tolerance && abs(lhs.height - rhs.height) <= tolerance
     }
 
     private func copyAttribute(_ attribute: String, from element: AXUIElement) -> CFTypeRef? {
@@ -392,8 +574,7 @@ final class WindowManager {
 
     private func cancelPendingPlacement() {
         placementGeneration &+= 1
-        pendingTarget = nil
-        queuedPlacement = nil
+        pendingPlacements.removeAll()
     }
 
     @discardableResult
@@ -409,11 +590,13 @@ final class WindowManager {
         return true
     }
 
-    private func finishPlacement(_ action: WindowLayoutAction, target: ManagedWindowTarget, restoring: Bool) {
+    private func finishPlacement(_ action: WindowLayoutAction, target: ManagedWindowTarget, restoring: Bool,
+                                 reportResult: Bool = true) {
+        if let index = historyIndex(for: target) { histories[index].placementUnconfirmed = false }
         if restoring, let index = historyIndex(for: target), !histories[index].frames.isEmpty {
             histories[index].frames.removeLast()
         }
-        report("\(action.title) · \(target.applicationName)")
+        if reportResult { report("\(action.title) · \(target.applicationName)") }
     }
 
     private func readyToArrange() -> Bool {

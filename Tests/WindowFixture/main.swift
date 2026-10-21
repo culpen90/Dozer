@@ -28,7 +28,8 @@ final class FixtureDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.title = "Dozer Window Fixture"
         window.identifier = NSUserInterfaceItemIdentifier("DozerWindowFixture")
         window.setAccessibilityIdentifier("DozerWindowFixture")
-        window.minSize = CGSize(width: 160, height: 120)
+        window.minSize = CommandLine.arguments.contains("--large-minimum")
+            ? CGSize(width: 1000, height: 700) : CGSize(width: 160, height: 120)
         window.isReleasedWhenClosed = false
         window.delegate = self
         buildContent()
@@ -62,7 +63,8 @@ final class FixtureDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         frameLabel.alignment = .center
         frameLabel.setAccessibilityIdentifier("fixtureFrame")
         frameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let resetButton = NSButton(title: "Reset to 700 × 500", target: self, action: #selector(resetFrame))
+        let resetTitle = CommandLine.arguments.contains("--large-minimum") ? "Reset to 1000 × 700" : "Reset to 700 × 500"
+        let resetButton = NSButton(title: resetTitle, target: self, action: #selector(resetFrame))
         resetButton.bezelStyle = .rounded
         resetButton.setAccessibilityIdentifier("resetFixtureFrame")
         stack.addArrangedSubview(heading)
@@ -86,7 +88,8 @@ final class FixtureDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func resetFrame() {
         let visible = (window.screen ?? NSScreen.main ?? NSScreen.screens.first)?.visibleFrame
             ?? CGRect(x: 0, y: 0, width: 1200, height: 800)
-        let width = min(700, visible.width), height = min(500, visible.height)
+        let width = min(max(700, window.minSize.width), visible.width)
+        let height = min(max(500, window.minSize.height), visible.height)
         window.setFrame(CGRect(x: visible.midX - width / 2, y: visible.midY - height / 2,
                                width: width, height: height), display: true)
         recordFrame(reason: "reset", force: true)
@@ -118,6 +121,8 @@ final class FixtureDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             "reason": reason,
             "timestamp": ISO8601DateFormatter().string(from: Date()),
             "frame": dictionary(frame),
+            "nativeAccessibilityFrame": dictionary(window.accessibilityFrame()),
+            "minimumSize": ["width": window.minSize.width, "height": window.minSize.height],
             "accessibilityFrame": dictionary(CGRect(x: frame.minX, y: primaryTop - frame.maxY,
                                                        width: frame.width, height: frame.height)),
             "coordinateSystem": "AppKit points; y increases upward",
@@ -140,6 +145,7 @@ final class FixtureDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func dictionary(_ rect: CGRect) -> [String: Double] {
         ["x": Double(rect.minX), "y": Double(rect.minY), "width": Double(rect.width), "height": Double(rect.height)]
     }
+
 }
 
 let arguments = CommandLine.arguments
