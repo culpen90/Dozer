@@ -72,5 +72,7 @@ Do not advertise exact full-app parity while those differences exist.
 
 The application remains independently built and signed by this project. CI
 provides a universal build artifact; it does not install software onto users'
-Macs or switch the old Dozer updater back on. Installed app updates still use
-the documented build/install process.
+Macs or switch the old Dozer updater back on. Installed app updates use a
+published Dozer download from GitHub Releases or the documented build/install
+process. Dozer's combined app has its own release version, independent of the
+upstream Rectangle version recorded in the manifest.

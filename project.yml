@@ -43,8 +43,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.mortennn.Dozer
         PRODUCT_NAME: Dozer
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "6.1.0"
-        CURRENT_PROJECT_VERSION: 33
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: 34
         VERSIONING_SYSTEM: apple-generic
         COMBINE_HIDPI_IMAGES: YES
 schemes:
