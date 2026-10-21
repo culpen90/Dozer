@@ -19,3 +19,7 @@ Dozer/Other/Generated/
 .swiftpm/
 *.xcuserstate
 xcuserdata/
+
+# Python release tooling
+__pycache__/
+*.pyc

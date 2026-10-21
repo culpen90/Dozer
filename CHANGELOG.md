@@ -1,5 +1,14 @@
 # Changelog
 
+## 6.1.0 — Independent Rectangle release ports
+
+- Keep Dozer's window interface and independently maintained menu bar features.
+- Track official Rectangle releases hourly, stage full source snapshots as draft ports, and require recorded review and validation before acceptance.
+- Port Rectangle 2.0.4 vertical sixth layouts and optional opposite-side repeated half commands.
+- Recognize Emacs standard-window subroles during drag snapping.
+- Use minimum-size-aware window placement and avoid redundant Accessibility writes while preserving asynchronous recovery.
+- Add CI for source integrity, port tooling, native core regressions, and universal builds.
+
 ## 6.0.0 — Dozer Workspace
 
 - Unified native workspace, Menu Bar, Windows, and About pages, with an explicit target-app picker for layout buttons.

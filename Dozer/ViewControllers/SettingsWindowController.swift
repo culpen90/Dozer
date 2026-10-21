@@ -22,6 +22,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let enabledCheckbox = NSButton(checkboxWithTitle: "Enable window management", target: nil, action: nil)
     private let dragCheckbox = NSButton(checkboxWithTitle: "Snap windows when dragged to screen edges", target: nil, action: nil)
     private let gapPopup = NSPopUpButton()
+    private let repeatCheckbox = NSButton(checkboxWithTitle: "Cycle repeated layouts", target: nil, action: nil)
 
     init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 730),
@@ -225,6 +226,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         gapPopup.setAccessibilityIdentifier("windows.gap")
         stack.addArrangedSubview(horizontal([label("Window spacing", size: 13), gapPopup]))
         stack.addArrangedSubview(caption("Quit Rectangle or other window managers while using Dozer to avoid competing shortcuts and snap previews."))
+        repeatCheckbox.target = self
+        repeatCheckbox.action = #selector(toggleRepeatedLayouts)
+        repeatCheckbox.setAccessibilityIdentifier("windows.cycleRepeatedLayouts")
+        stack.addArrangedSubview(repeatCheckbox)
+        stack.addArrangedSubview(caption("Repeating a half switches sides while its frame is unchanged. First Sixth and Last Sixth cycle through six positions. Off by default."))
         stack.addArrangedSubview(label("Keyboard shortcuts", size: 18, weight: .semibold))
         stack.addArrangedSubview(caption("Click a shortcut to record. Escape cancels; Delete clears. Conflicts keep your previous shortcut working."))
         var previousGroup: String?
@@ -300,6 +306,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         enabledCheckbox.state = manager.isEnabled ? .on : .off
         dragCheckbox.state = manager.dragSnappingEnabled ? .on : .off
         dragCheckbox.isEnabled = manager.isEnabled
+        repeatCheckbox.state = manager.cycleRepeatedLayouts ? .on : .off
+        repeatCheckbox.isEnabled = manager.isEnabled
         gapPopup.isEnabled = manager.isEnabled
         gapPopup.selectItem(withTag: Int(manager.gap))
         recorders.forEach { $0.refreshTitle() }
@@ -372,6 +380,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         else { WindowShortcutManager.shared.stop() }
         refresh()
     }
+    @objc private func toggleRepeatedLayouts() { WindowManager.shared.cycleRepeatedLayouts = repeatCheckbox.state == .on; refresh() }
     @objc private func toggleDrag() { WindowManager.shared.dragSnappingEnabled = dragCheckbox.state == .on; refresh() }
     @objc private func changeGap() { WindowManager.shared.gap = CGFloat(gapPopup.selectedTag()) }
     @objc private func resetShortcuts() { stopRecording(); WindowShortcutManager.shared.restoreDefaults(); refresh() }

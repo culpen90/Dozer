@@ -158,6 +158,8 @@ final class WindowShortcutManager {
         case .nextDisplay: (code, name) = (124, "→"); extra = UInt32(shiftKey)
         case .previousDisplay: (code, name) = (123, "←"); extra = UInt32(shiftKey)
         case .restore: (code, name) = (51, "Delete")
+        case .firstVerticalSixth, .secondVerticalSixth, .thirdVerticalSixth,
+             .fourthVerticalSixth, .fifthVerticalSixth, .lastVerticalSixth: return nil
         }
         return KeyboardShortcut(keyCode: code, modifiers: modifiers | extra, keyName: name)
     }

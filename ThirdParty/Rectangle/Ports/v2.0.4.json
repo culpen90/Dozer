@@ -1,0 +1,207 @@
+{
+  "upstream_commit": "e9bb8521e51727de21c31c3a96747909d42c098f",
+  "upstream_release": "v2.0.4",
+  "parity": "scoped",
+  "review_kind": "initial scoped baseline and targeted 2.0.4 follow-up port",
+  "scope": "Keep Dozer native window interface and independently maintained menu bar. This report establishes the current inspected baseline, not full Rectangle feature equivalence. Future newly released window behavior must be ported or left pending, not silently exempted because it is absent here.",
+  "paths": [
+    {
+      "pattern": "Rectangle/WindowCalculation/*",
+      "disposition": "Reviewed reference calculations. Dozer adapts halves, quarters, thirds, display transfer, centering, size steps, gaps and now vertical sixths and switchSides. Other actions/preferences remain explicitly scoped baseline differences; upstream files stay untouched."
+    },
+    {
+      "pattern": "Rectangle/AccessibilityElement.swift",
+      "disposition": "Ported standard-window subrole fallback, AX minimum-size aliases and immediate-placement write reduction into WindowManager, WindowPlacementAdjustment and tested EnhancedUI scope. Retained Dozer validation, async recovery and selected-app ownership."
+    },
+    {
+      "pattern": "Rectangle/WindowAction.swift",
+      "disposition": "New vertical sixth action identities are represented in Dozer action enum, menus and configurable unbound shortcuts. Full upstream action catalog is reference material; current action subset is recorded as a baseline limitation."
+    },
+    {
+      "pattern": "Rectangle/SubsequentExecutionMode.swift",
+      "disposition": "New switchSides behavior is ported through Dozer Cycle repeated layouts setting; other upstream repeat modes are not claimed and remain baseline differences."
+    },
+    {
+      "pattern": "Rectangle/*",
+      "disposition": "Initial full-source baseline inventory: app shell, updater, settings, shortcut/drag adapters, cooperative resize, resources and additional managers are preserved for review. Dozer retains its native integration; omitted runtime features and localizations are explicitly listed below rather than asserted as ported."
+    },
+    {
+      "pattern": "RectangleTests/*",
+      "disposition": "Preserved complete upstream tests as reference; added native Dozer regression cases for copied sixth/repeat/AX behavior. Upstream Xcode test suite is not compiled as Dozer code."
+    },
+    {
+      "pattern": "Rectangle.xcodeproj/*",
+      "disposition": "Preserved upstream build specification and package references unchanged; Dozer builds independently using project.yml and system frameworks."
+    },
+    {
+      "pattern": ".github/*",
+      "disposition": "Preserved upstream workflow reference data; Dozer executes only its own top-level workflows and does not run upstream maintenance instructions."
+    },
+    {
+      "pattern": ".gitignore",
+      "disposition": "Preserved unchanged in initial upstream source snapshot. Upstream MIT license is retained in Dozer notices; Dozer owns its project-specific policies, controls, documentation and build process."
+    },
+    {
+      "pattern": "CODE_OF_CONDUCT.md",
+      "disposition": "Preserved unchanged in initial upstream source snapshot. Upstream MIT license is retained in Dozer notices; Dozer owns its project-specific policies, controls, documentation and build process."
+    },
+    {
+      "pattern": "CONTRIBUTING.md",
+      "disposition": "Preserved unchanged in initial upstream source snapshot. Upstream MIT license is retained in Dozer notices; Dozer owns its project-specific policies, controls, documentation and build process."
+    },
+    {
+      "pattern": "LICENSE",
+      "disposition": "Preserved unchanged in initial upstream source snapshot. Upstream MIT license is retained in Dozer notices; Dozer owns its project-specific policies, controls, documentation and build process."
+    },
+    {
+      "pattern": "README.md",
+      "disposition": "Preserved unchanged in initial upstream source snapshot. Upstream MIT license is retained in Dozer notices; Dozer owns its project-specific policies, controls, documentation and build process."
+    },
+    {
+      "pattern": "README.zh-Hans.md",
+      "disposition": "Preserved unchanged in initial upstream source snapshot. Upstream MIT license is retained in Dozer notices; Dozer owns its project-specific policies, controls, documentation and build process."
+    },
+    {
+      "pattern": "SECURITY.md",
+      "disposition": "Preserved unchanged in initial upstream source snapshot. Upstream MIT license is retained in Dozer notices; Dozer owns its project-specific policies, controls, documentation and build process."
+    },
+    {
+      "pattern": "TerminalCommands.md",
+      "disposition": "Preserved unchanged in initial upstream source snapshot. Upstream MIT license is retained in Dozer notices; Dozer owns its project-specific policies, controls, documentation and build process."
+    }
+  ],
+  "release_notes": [
+    {
+      "item": "Keep snap previews translucent with Reduce Transparency by @kiteretsu903 in https://github.com/rxhanson/Rectangle/pull/1898",
+      "disposition": "Dozer uses its own alpha-colored AppKit preview rather than upstream NSVisualEffectView; no opaque material introduced by this port. Live Reduce Transparency visual validation remains a baseline limitation."
+    },
+    {
+      "item": "Isolate and improve optional window animations by @kiteretsu903 in https://github.com/rxhanson/Rectangle/pull/1886",
+      "disposition": "Ported minimum-aware immediate Accessibility placement into WindowPlacementAdjustment; retained Dozer asynchronous recovery and scoped EnhancedUI restoration. Optional animation settings remain a baseline feature difference."
+    },
+    {
+      "item": "Avoid redundant Accessibility writes during ordinary window placement by @kiteretsu903 in https://github.com/rxhanson/Rectangle/pull/1899",
+      "disposition": "Ported ordinary placement write elision and AXMinSize/AXMinimumSize fitting; permission-free tests model synchronous placement, transient display limits and failed reads/writes."
+    },
+    {
+      "item": "Add mouse button shortcuts for window actions by @harshpatel333 in https://github.com/rxhanson/Rectangle/pull/1895",
+      "disposition": "Not yet implemented in the existing scoped integration: mouse-button shortcut recording and dispatch. Recorded as a baseline feature gap, not claimed as imported."
+    },
+    {
+      "item": "Add Persian (fa) localization by @aliafshany in https://github.com/rxhanson/Rectangle/pull/1910",
+      "disposition": "Reference Persian resources preserved untouched; Dozer owns its English-native settings interface and has no equivalent localization bundle to replace."
+    },
+    {
+      "item": "Keep snap-preview material and geometry in sync by @kiteretsu903 in https://github.com/rxhanson/Rectangle/pull/1900",
+      "disposition": "Dozer uses a single owned preview with explicit frame updates. Upstream material lifecycle code is reference-only; actual preview visual behavior needs native desktop validation."
+    },
+    {
+      "item": "Add an option to snap before reaching outer screen edges by @kiteretsu903 in https://github.com/rxhanson/Rectangle/pull/1901",
+      "disposition": "Not yet implemented in the existing scoped integration: configurable outer-edge snap distance. Dozer retains its existing fixed snap-zone threshold; recorded as a baseline feature gap."
+    },
+    {
+      "item": "Sort the stacked-window list alphabetically by @MyronKoch in https://github.com/rxhanson/Rectangle/pull/1909",
+      "disposition": "Not applicable to the existing interface: Dozer has no stacked-window list. Upstream behavior remains in the reference snapshot and the absence is recorded in the feature-gap ledger."
+    },
+    {
+      "item": "Persian: fix right-to-left layout of the accessibility prompt by @aliafshany in https://github.com/rxhanson/Rectangle/pull/1914",
+      "disposition": "Upstream Persian accessibility prompt layout belongs to its app UI; Dozer uses its own English AppKit permission panel."
+    },
+    {
+      "item": "Honor screenEdgeGapTopNotch when it is set to 0 by @efim0v in https://github.com/rxhanson/Rectangle/pull/1911",
+      "disposition": "Not yet implemented: separate screenEdgeGapTopNotch preference. Dozer retains explicit NSScreen.visibleFrame plus uniform gap and documents this baseline difference."
+    },
+    {
+      "item": "Complete the Simplified Chinese (zh-Hans) localization by @AkiyamaKunka in https://github.com/rxhanson/Rectangle/pull/1916",
+      "disposition": "Reference zh-Hans resources preserved. This port keeps Dozer native interface text and does not claim upstream localization support."
+    },
+    {
+      "item": "Add regression coverage for Todo placement on offset displays by @culpen90 in https://github.com/rxhanson/Rectangle/pull/1919",
+      "disposition": "Upstream Todo offset-display tests are preserved as reference; Dozer has no Todo feature. Existing Dozer display-transfer and constrained-placement tests cover negative/offset geometry."
+    },
+    {
+      "item": "Add full-height vertical sixth window actions by @ehippy in https://github.com/rxhanson/Rectangle/pull/1917",
+      "disposition": "Ported all six full-height vertical sixth actions, portrait/square orientation, floored boundaries, explicit outer/shared gaps and first/last cycling. Regression coverage includes fractional dimensions."
+    },
+    {
+      "item": "Complete the Brazilian Portuguese (pt-BR) localization by @OCampezzi in https://github.com/rxhanson/Rectangle/pull/1918",
+      "disposition": "Reference pt-BR resources preserved. Dozer native interface remains independently maintained and English-only."
+    },
+    {
+      "item": "Ukrainian localization by @lsl87Serhii in https://github.com/rxhanson/Rectangle/pull/1923",
+      "disposition": "Reference Ukrainian resources preserved. Dozer native interface remains independently maintained and English-only."
+    },
+    {
+      "item": "Add a Simplified Chinese README by @AkiyamaKunka in https://github.com/rxhanson/Rectangle/pull/1928",
+      "disposition": "Upstream documentation is preserved unchanged; Dozer README documents this independent interface and port workflow."
+    },
+    {
+      "item": "Add a repeated-commands option that switches to the opposite side by @AkiyamaKunka in https://github.com/rxhanson/Rectangle/pull/1925",
+      "disposition": "Ported switchSides for all half actions behind a default-off native setting; resulting-action history and exact last-frame repeat detection match upstream rules. Existing other repeat modes remain baseline differences."
+    },
+    {
+      "item": "Fix drag-snap window detection for Emacs 28 by @culpen90 in https://github.com/rxhanson/Rectangle/pull/1926",
+      "disposition": "Ported role-or-AXStandardWindow classification for hit testing and eligibility, preserving PID/fullscreen/minimized/dialog restrictions; regression covers Emacs-like AXTextField role."
+    },
+    {
+      "item": "Give Debug builds their own bundle identifier by @AkiyamaKunka in https://github.com/rxhanson/Rectangle/pull/1927",
+      "disposition": "Upstream build identity change is reference-only. Dozer deliberately retains com.mortennn.Dozer for preference and Accessibility compatibility; builds are not run concurrently."
+    },
+    {
+      "item": "Point README to the 2.0 Settings tabs by @AkiyamaKunka in https://github.com/rxhanson/Rectangle/pull/1931",
+      "disposition": "Upstream README settings links are preserved as reference; Dozer documentation points to Dozer own Windows controls."
+    },
+    {
+      "item": "Use a Chinese screenshot in README.zh-Hans.md by @AkiyamaKunka in https://github.com/rxhanson/Rectangle/pull/1936",
+      "disposition": "Upstream Chinese screenshot is preserved as reference asset and is not displayed in Dozer UI."
+    },
+    {
+      "item": "Document the alwaysAccountForStage hidden preference by @AkiyamaKunka in https://github.com/rxhanson/Rectangle/pull/1932",
+      "disposition": "Upstream hidden Stage Manager preference documentation is preserved; Dozer uses visibleFrame and has no alwaysAccountForStage option, recorded as a baseline feature difference."
+    },
+    {
+      "item": "Minor bug fixes by @rxhanson",
+      "disposition": "Compared exact release source with prior inspected checkout: relevant changes reviewed for calculations, AX placement, Emacs resolution, repeat actions and sixths. Remaining independent-app behaviors are recorded as baseline differences; no blanket full-parity claim."
+    },
+    {
+      "item": "@aliafshany made their first contribution in https://github.com/rxhanson/Rectangle/pull/1910",
+      "disposition": "Contributor acknowledgment only; retained in upstream release notes with no runtime change."
+    },
+    {
+      "item": "@efim0v made their first contribution in https://github.com/rxhanson/Rectangle/pull/1911",
+      "disposition": "Contributor acknowledgment only; retained in upstream release notes with no runtime change."
+    },
+    {
+      "item": "@AkiyamaKunka made their first contribution in https://github.com/rxhanson/Rectangle/pull/1916",
+      "disposition": "Contributor acknowledgment only; retained in upstream release notes with no runtime change."
+    },
+    {
+      "item": "@ehippy made their first contribution in https://github.com/rxhanson/Rectangle/pull/1917",
+      "disposition": "Contributor acknowledgment only; retained in upstream release notes with no runtime change."
+    },
+    {
+      "item": "@OCampezzi made their first contribution in https://github.com/rxhanson/Rectangle/pull/1918",
+      "disposition": "Contributor acknowledgment only; retained in upstream release notes with no runtime change."
+    },
+    {
+      "item": "@lsl87Serhii made their first contribution in https://github.com/rxhanson/Rectangle/pull/1923",
+      "disposition": "Contributor acknowledgment only; retained in upstream release notes with no runtime change."
+    }
+  ],
+  "validation": [
+    "python3 -m unittest discover -s Tests/RectangleReleaseTests -v: 22 offline release/snapshot/review tests passed.",
+    "swift test: 51 tests passed, including 23 window layout cases and 9 placement cases.",
+    "make test-window-adjustment: 7/7 scoped EnhancedUI restoration checks passed without Accessibility permission.",
+    "make release: universal arm64 and x86_64 Dozer 6.1.0 build33 built and locally ad-hoc signed; codesign --verify --strict passed. Local Xcode emits unrelated CoreDevice/CoreSimulator plugin warnings but macOS build exits successfully.",
+    "actionlint .github/workflows/ci.yml .github/workflows/rectangle-upstream.yml: passed.",
+    "Live check --tag v2.0.4 and offline snapshot verification passed. All487 snapshot files independently matched official commit Git blob SHA1s; no snapshot paths were ignored by Git.",
+    "Bundled notices generated from current MPL/MIT licenses and source provenance; update_notices.py --check passed."
+  ],
+  "limitations": [
+    "Scoped baseline only: existing Dozer integration is not the complete Rectangle application. Snapshot/review status never certifies full feature parity.",
+    "Baseline feature gaps include mouse-button shortcuts, configurable outer-edge snap distance, per-edge/notch gaps, additional Rectangle actions and repeat modes, custom snap regions, app exclusions, cooperative resizing, stacking, Todo and optional animation preferences.",
+    "Dozer keeps its independently designed English-native workspace; upstream settings UI, localizations, automatic updater, product branding and build identity are not imported.",
+    "Native window movement, drag snapping in Emacs, Reduce Transparency appearance and physical multi-display behavior were not tested live in this change. Active Dozer was left running; Carbon registration and menu bar runtime checks were not rerun against it.",
+    "Installed application is unchanged; universal build is validated but not installed, notarized or published by this port setup."
+  ]
+}

@@ -33,4 +33,6 @@ Use a separate test menu bar item when checking hiding, and restore its original
 
 ## Pull requests
 
+For Rectangle updates, follow [the porting procedure](ThirdParty/Rectangle/MAINTENANCE.md). Keep Dozer's native window interface, inspect the complete upstream release diff, and port applicable behavior into Dozer-owned code. The source snapshot under `ThirdParty/Rectangle/Upstream/` is reference material only. Do not edit it or merge a source-only draft as an accepted integration. Record path-by-path and release-note dispositions and validation in `ThirdParty/Rectangle/Ports/`. The original Dozer project is not an automatic merge source.
+
 Explain the concrete problem, resulting behavior, relevant tradeoffs, and validation performed. Link applicable issues and update `CHANGELOG.md` for user-visible changes. Keep changes focused and preserve the Mozilla Public License notices and Rectangle MIT attribution under `ThirdParty/Rectangle/`. Update the bundled notices whenever upstream provenance changes.

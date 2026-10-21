@@ -21,7 +21,7 @@ func runChecks() {
     let manager = WindowShortcutManager(defaults: defaults, observesWindowState: false)
     defer { manager.stop() }
     manager.start()
-    check(WindowLayoutAction.allCases.allSatisfy(manager.isRegistered), "all 21 default shortcuts register")
+    check(WindowLayoutAction.allCases.allSatisfy { manager.isRegistered($0) == (WindowShortcutManager.defaultShortcut(for: $0) != nil) }, "configured default shortcuts register and sixths remain unbound")
 
     // A fresh manager assigns identifier 1 to the first declared action,
     // .leftHalf. Deliver only to this fixture's application event target;
@@ -103,7 +103,7 @@ func runChecks() {
           "pause retains saved preference validation feedback")
     manager.setEnabled(true)
     manager.restoreDefaults()
-    check(WindowLayoutAction.allCases.allSatisfy(manager.isRegistered), "restore defaults recovers invalid and cleared bindings")
+    check(WindowLayoutAction.allCases.allSatisfy { manager.isRegistered($0) == (WindowShortcutManager.defaultShortcut(for: $0) != nil) }, "restore defaults recovers invalid and cleared bindings")
     check(manager.errors.isEmpty, "successful reset clears errors")
     manager.stop()
     check(WindowLayoutAction.allCases.allSatisfy { !manager.isRegistered($0) }, "stop releases every registered shortcut")

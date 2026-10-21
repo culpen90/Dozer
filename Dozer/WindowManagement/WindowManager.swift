@@ -37,6 +37,7 @@ final class WindowManager {
         let target: ManagedWindowTarget
         var frames: [CGRect]
         var placementUnconfirmed = false
+        var repeatState: WindowLayoutRepeatState?
     }
 
     private struct QueuedPlacement {
@@ -65,11 +66,13 @@ final class WindowManager {
     private struct PlacementResult {
         let generation: UInt64
         let action: WindowLayoutAction
+        let layoutAction: WindowLayoutAction
         let target: ManagedWindowTarget
         let destination: CGRect
         let visibleFrame: CGRect
         let gap: CGFloat
         let restoring: Bool
+        let resetsRepeat: Bool
         let baseline: CGRect
         let initialPosition: CGPoint
         var lastPosition: CGPoint
@@ -78,7 +81,8 @@ final class WindowManager {
     private init() {
         defaults.register(defaults: ["windowManagementEnabled": true,
                                      "windowDragSnappingEnabled": true,
-                                     "windowGap": 8.0])
+                                     "windowGap": 8.0,
+                                     "cycleRepeatedWindowLayouts": false])
     }
 
     var isEnabled: Bool {
@@ -109,6 +113,15 @@ final class WindowManager {
             let value = newValue.isFinite ? min(30, max(0, newValue)) : 8
             defaults.set(Double(value), forKey: "windowGap")
             dragging.cancelDrag()
+            publish()
+        }
+    }
+
+    var cycleRepeatedLayouts: Bool {
+        get { defaults.bool(forKey: "cycleRepeatedWindowLayouts") }
+        set {
+            defaults.set(newValue, forKey: "cycleRepeatedWindowLayouts")
+            for index in histories.indices { histories[index].repeatState = nil }
             publish()
         }
     }
@@ -222,10 +235,15 @@ final class WindowManager {
             report("This window cannot be arranged. Try a normal, non-full-screen window.")
             return
         }
+        let previous = historyIndex(for: target).flatMap { histories[$0].repeatState }
+        // Drag snapping always uses the explicit preview destination; only a
+        // repeated menu, tile, or keyboard command participates in cycling.
+        let layoutAction = WindowLayoutGeometry.repeatedAction(for: action, window: current,
+                                      previous: previous, enabled: cycleRepeatedLayouts && restoreFrame == nil)
         let screens = NSScreen.screens
         let index = WindowLayoutGeometry.screenIndex(for: current, screens: screens.map(\.frame)) ?? 0
         let source = screen.flatMap { requested in screens.first(where: { $0 === requested }) } ?? screens[index]
-        let destination: CGRect
+        var destination: CGRect
         let destinationVisibleFrame: CGRect
         var restoring = false
         switch action {
@@ -259,12 +277,19 @@ final class WindowManager {
                                                           to: next.visibleFrame, gap: gap)
             destinationVisibleFrame = next.visibleFrame
         default:
-            guard let calculated = WindowLayoutGeometry.frame(for: action, window: current,
+            guard let calculated = WindowLayoutGeometry.frame(for: layoutAction, window: current,
                                                                visibleFrame: source.visibleFrame, gap: gap) else { return }
             destination = calculated
             destinationVisibleFrame = source.visibleFrame
         }
 
+        guard let feasible = WindowPlacementAdjustment.feasibleFrame(requested: destination,
+                            minimumSize: minimumSize(of: target), visibleFrame: destinationVisibleFrame,
+                            gap: restoring ? 0 : gap) else {
+            report("The display layout is unavailable. Try again after the display reconnects.")
+            return
+        }
+        destination = feasible
         guard destination.width > 0, destination.height > 0,
               [destination.minX, destination.minY, destination.width, destination.height].allSatisfy(\.isFinite) else {
             report("The display layout is unavailable. Try again after the display reconnects.")
@@ -289,7 +314,8 @@ final class WindowManager {
             } else if let restoreFrame, !framesMatch(restoreFrame, current) {
                 remember(restoreFrame, for: target)
             }
-            report("\(action.title) · \(target.applicationName)")
+            recordRepeat(action, layoutAction: layoutAction, target: target, frame: current, restoring: restoring || restoreFrame != nil)
+            report("\(layoutAction.title) · \(target.applicationName)")
             return
         }
 
@@ -297,25 +323,30 @@ final class WindowManager {
         // Capture the original before issuing AX writes. Some applications apply
         // them asynchronously; the window must remain recoverable in the meantime.
         if !restoring { remember(baseline, for: target) }
-        if let index = historyIndex(for: target) { histories[index].placementUnconfirmed = true }
+        if let index = historyIndex(for: target) {
+            histories[index].placementUnconfirmed = true
+            histories[index].repeatState = nil
+        }
         let edgeGap: CGFloat = restoring ? 0 : gap
         // Each window settles independently. Commands for another window must
         // not discard this window's queued restore or its history update.
         pendingPlacements[identity] = PendingPlacement(generation: generation)
-        var result = PlacementResult(generation: generation, action: action, target: target,
+        var result = PlacementResult(generation: generation, action: action, layoutAction: layoutAction, target: target,
                                      destination: destination, visibleFrame: destinationVisibleFrame,
-                                     gap: edgeGap, restoring: restoring, baseline: baseline,
+                                     gap: edgeGap, restoring: restoring, resetsRepeat: restoreFrame != nil, baseline: baseline,
                                      initialPosition: CGPoint(x: current.minX, y: current.maxY),
                                      lastPosition: CGPoint(x: current.minX, y: current.maxY))
         if changesSize {
-            // Rectangle suppresses native AX animation within this synchronous
-            // size-position-size adjustment, then restores Enhanced UI. Keep
-            // the staged path for applications that still constrain or defer it.
-            _ = setFrame(destination, of: target)
-            result.lastPosition = CGPoint(x: destination.minX, y: destination.maxY)
+            // Follow upstream's immediate placement without redundant writes,
+            // then retain staged recovery for deferred or constrained AX writes.
+            let immediate = setFrame(destination, before: current, visibleFrame: destinationVisibleFrame,
+                                     gap: edgeGap, of: target)
+            if let moved = immediate.lastPositionFrame {
+                result.lastPosition = CGPoint(x: moved.minX, y: moved.maxY)
+            }
             if let actual = frame(of: target), framesMatch(actual, destination, tolerance: 3) {
                 pendingPlacements.removeValue(forKey: identity)
-                finishPlacement(action, target: target, restoring: restoring)
+                finishPlacement(action, layoutAction: layoutAction, target: target, restoring: restoring, resetRepeat: restoreFrame != nil)
                 return
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
@@ -327,7 +358,7 @@ final class WindowManager {
         result.lastPosition = CGPoint(x: destination.minX, y: destination.maxY)
         if let actual = frame(of: target), framesMatch(actual, destination, tolerance: 3) {
             pendingPlacements.removeValue(forKey: identity)
-            finishPlacement(action, target: target, restoring: restoring)
+            finishPlacement(action, layoutAction: layoutAction, target: target, restoring: restoring, resetRepeat: restoreFrame != nil)
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
@@ -416,7 +447,7 @@ final class WindowManager {
         }
         let queued = pendingPlacements.removeValue(forKey: identity)?.queued
         if succeeded {
-            finishPlacement(result.action, target: result.target, restoring: result.restoring,
+            finishPlacement(result.action, layoutAction: result.layoutAction, target: result.target, restoring: result.restoring, resetRepeat: result.resetsRepeat,
                             reportResult: result.generation == placementGeneration)
         } else if result.generation == placementGeneration {
             // Keep the baseline even if AX still reports the old frame: an
@@ -465,7 +496,8 @@ final class WindowManager {
         guard AXUIElementCopyElementAtPosition(system, Float(position.x), Float(position.y), &hit) == .success,
               var element = hit else { return nil }
         for _ in 0..<16 {
-            if copyAttribute(kAXRoleAttribute, from: element) as? String == kAXWindowRole {
+            if WindowAccessibilityClassification.isWindow(role: copyAttribute(kAXRoleAttribute, from: element) as? String,
+                                                           subrole: copyAttribute(kAXSubroleAttribute, from: element) as? String) {
                 var pid: pid_t = 0
                 guard AXUIElementGetPid(element, &pid) == .success,
                       pid != ProcessInfo.processInfo.processIdentifier,
@@ -486,7 +518,8 @@ final class WindowManager {
         let subrole = copyAttribute(kAXSubroleAttribute, from: target.element) as? String
         guard let app = NSRunningApplication(processIdentifier: target.processIdentifier),
               !app.isTerminated, target.processIdentifier != ProcessInfo.processInfo.processIdentifier,
-              copyAttribute(kAXRoleAttribute, from: target.element) as? String == kAXWindowRole,
+              WindowAccessibilityClassification.isWindow(role: copyAttribute(kAXRoleAttribute, from: target.element) as? String,
+                                                         subrole: subrole),
               subrole == nil || subrole == kAXStandardWindowSubrole,
               (copyAttribute(kAXMinimizedAttribute, from: target.element) as? Bool) != true,
               (copyAttribute("AXFullScreen", from: target.element) as? Bool) != true else { return false }
@@ -511,12 +544,26 @@ final class WindowManager {
     private var desktopTop: CGFloat { NSScreen.screens.first?.frame.maxY ?? 0 }
     private func accessibilityPoint(_ point: CGPoint) -> CGPoint { CGPoint(x: point.x, y: desktopTop - point.y) }
 
-    private func setFrame(_ frame: CGRect, of target: ManagedWindowTarget) -> Bool {
+    private func minimumSize(of target: ManagedWindowTarget) -> CGSize? {
+        // Rectangle supports both toolkit spellings of the AX minimum-size attribute.
+        for attribute in ["AXMinSize", "AXMinimumSize"] {
+            guard let value = copyAttribute(attribute, from: target.element),
+                  CFGetTypeID(value) == AXValueGetTypeID() else { continue }
+            let wrapped = value as! AXValue
+            guard AXValueGetType(wrapped) == .cgSize else { continue }
+            var size = CGSize.zero
+            if AXValueGetValue(wrapped, .cgSize, &size) { return size }
+        }
+        return nil
+    }
+
+    private func setFrame(_ frame: CGRect, before: CGRect, visibleFrame: CGRect,
+                          gap: CGFloat, of target: ManagedWindowTarget) -> WindowPlacementAdjustment.Result {
         RectangleWindowAdjustment.perform(for: target.element) {
-            let firstResize = setSizeDirectly(frame.size, of: target)
-            let movement = setPositionDirectly(frame, of: target)
-            let secondResize = setSizeDirectly(frame.size, of: target)
-            return firstResize && movement && secondResize
+            WindowPlacementAdjustment.perform(requested: frame, before: before, visibleFrame: visibleFrame, gap: gap,
+                readFrame: { self.frame(of: target) },
+                resize: { self.setSizeDirectly($0, of: target) },
+                move: { self.setPositionDirectly($0, of: target) })
         }
     }
 
@@ -575,6 +622,7 @@ final class WindowManager {
     private func cancelPendingPlacement() {
         placementGeneration &+= 1
         pendingPlacements.removeAll()
+        for index in histories.indices { histories[index].repeatState = nil }
     }
 
     @discardableResult
@@ -590,13 +638,28 @@ final class WindowManager {
         return true
     }
 
-    private func finishPlacement(_ action: WindowLayoutAction, target: ManagedWindowTarget, restoring: Bool,
+    private func recordRepeat(_ action: WindowLayoutAction, layoutAction: WindowLayoutAction,
+                              target: ManagedWindowTarget, frame: CGRect, restoring: Bool) {
+        if historyIndex(for: target) == nil {
+            histories.append(WindowHistory(target: target, frames: []))
+            if histories.count > 40 { histories.removeFirst() }
+        }
+        if let index = historyIndex(for: target) {
+            histories[index].repeatState = restoring ? nil : WindowLayoutRepeatState(command: action, layout: layoutAction, frame: frame)
+        }
+    }
+
+    private func finishPlacement(_ action: WindowLayoutAction, layoutAction: WindowLayoutAction,
+                                 target: ManagedWindowTarget, restoring: Bool, resetRepeat: Bool = false,
                                  reportResult: Bool = true) {
         if let index = historyIndex(for: target) { histories[index].placementUnconfirmed = false }
         if restoring, let index = historyIndex(for: target), !histories[index].frames.isEmpty {
             histories[index].frames.removeLast()
         }
-        if reportResult { report("\(action.title) · \(target.applicationName)") }
+        if let actual = frame(of: target) {
+            recordRepeat(action, layoutAction: layoutAction, target: target, frame: actual, restoring: restoring || resetRepeat)
+        }
+        if reportResult { report("\(layoutAction.title) · \(target.applicationName)") }
     }
 
     private func readyToArrange() -> Bool {
