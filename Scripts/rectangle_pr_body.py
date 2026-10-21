@@ -24,8 +24,8 @@ Before this becomes ready to merge:
 - Run the release-tool tests, Dozer tests, scoped Accessibility checks, and universal build.
 - Accept the reviewed port with `Scripts/rectangle_release.py accept --review ...`.
 
-See `ThirdParty/Rectangle/MAINTENANCE.md`. The recurring Codex maintenance job
-can finish this port; this source-only draft must not be merged as an integrated update.
+See `ThirdParty/Rectangle/MAINTENANCE.md`. A maintainer must finish and validate
+this port; this source-only draft must not be merged as an integrated update.
 """
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(body + "\nTracking record:\n```json\n" + json.dumps(

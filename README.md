@@ -72,9 +72,9 @@ The old Dozer Sparkle updater has been removed so this independently maintained 
 
 ## Rectangle release updates
 
-An hourly GitHub workflow detects official stable Rectangle releases and opens a draft port request containing an untouched source snapshot and the full change inventory. A recurring Codex maintenance task reviews and ports applicable changes into Dozer's existing controls, validates them, and merges the completed port. Dozer's menu bar code remains independently maintained; no changes are automatically imported from the original Dozer repository.
+An hourly GitHub workflow detects official stable Rectangle releases and opens a draft port request containing an untouched source snapshot and the full change inventory. Maintainers review and port applicable changes into Dozer's existing controls, validate them, and merge the completed port. Dozer's menu bar code remains independently maintained; no changes are automatically imported from the original Dozer repository.
 
-A detected release remains pending until its port has been reviewed and tested. The current scoped integration and remaining feature differences are recorded under [`ThirdParty/Rectangle/Ports/`](ThirdParty/Rectangle/Ports/); tracking a source release does not mean complete Rectangle feature parity. The local coding task needs this Mac awake and the Codex desktop app running. GitHub detection continues independently. See the [maintenance procedure](ThirdParty/Rectangle/MAINTENANCE.md) for commands and acceptance rules. CI supplies a validated universal build artifact; updating the installed app still uses the build/install process above.
+A detected release remains pending until its port has been reviewed and tested. The current scoped integration and remaining feature differences are recorded under [`ThirdParty/Rectangle/Ports/`](ThirdParty/Rectangle/Ports/); tracking a source release does not mean complete Rectangle feature parity. The GitHub detector handles discovery; porting and merging are manual maintenance work. See the [maintenance procedure](ThirdParty/Rectangle/MAINTENANCE.md) for commands and acceptance rules. CI supplies a validated universal build artifact; updating the installed app still uses the build/install process above.
 
 ## Development
 

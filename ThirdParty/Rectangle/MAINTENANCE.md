@@ -18,12 +18,11 @@ changes outside the currently adapted files cannot silently disappear. Nothing
 under `Upstream/` is compiled into Dozer or used as a build dependency.
 
 The manifest distinguishes a pending source release from the last reviewed port.
-A scheduled Codex maintenance task in this chat performs the coding work: review
-the entire upstream diff and release notes, port fixes and new window behavior
-into Dozer-owned sources and controls, add relevant regression coverage, then
-validate and merge the completed port. The task runs locally and needs this Mac
-awake with the Codex desktop app running. GitHub detection continues separately.
-Scheduling is polling, so detection is not an instantaneous upstream webhook.
+Maintainers perform the coding work manually: review the entire upstream diff
+and release notes, port fixes and new window behavior into Dozer-owned sources
+and controls, add relevant regression coverage, then validate and merge the
+completed port. GitHub handles release discovery only. Its hourly polling is
+not an instantaneous upstream webhook.
 
 If several releases arrive between runs, review their release notes in order
 and account for every change since the last accepted port. Never overwrite a
