@@ -43,8 +43,8 @@ class HelperstatusIcon: NSObject {
             statusIcon.button?.isEnabled = !expanded && !controlHidden
             statusIcon.button?.alphaValue = expanded || controlHidden ? 0 : 1
             statusIcon.button?.toolTip = role == .control
-                ? "Dozer: click to \(hidden ? "show" : "hide") icons. Option-click shows extra icons. Right-click for settings."
-                : "Command-drag icons to the left of this dot to hide them. Right-click for settings."
+                ? "Dozer: click to \(hidden ? "show" : "hide") icons. Option-click shows extra icons. Right-click for window layouts and settings."
+                : "Command-drag icons to the left of this dot to hide them. Right-click for window layouts and settings."
             appearanceKey = key
         }
         // Update content before length: the remote menu-bar host can otherwise restore intrinsic sizing.
@@ -58,7 +58,7 @@ class HelperstatusIcon: NSObject {
         let event = NSApp.currentEvent
         guard event?.modifierFlags.contains(.command) != true else { return }
         if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
-            appDelegate.showSettings()
+            appDelegate.showControlMenu(from: statusIcon)
         } else if event?.modifierFlags.contains(.option) == true || role == .extraDivider {
             DozerIcons.shared.handleOptionClick()
         } else {

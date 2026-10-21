@@ -4,7 +4,7 @@ PROJECT := Dozer.xcodeproj
 APP_NAME := Dozer.app
 DESTINATION ?= /Applications/Dozer.app
 
-.PHONY: project build release test test-runtime install run clean
+.PHONY: project build release test test-runtime test-window-shortcuts test-window-adjustment install run clean
 
 project:
 	@command -v "$(XCODEGEN)" >/dev/null || { echo 'Install XcodeGen first: brew install xcodegen'; exit 1; }
@@ -23,6 +23,12 @@ test:
 
 test-runtime:
 	@Scripts/TestRuntime.sh
+
+test-window-shortcuts:
+	@Scripts/TestWindowShortcuts.sh
+
+test-window-adjustment:
+	@Scripts/TestWindowAdjustment.sh
 
 install: release
 	@Scripts/InstallApp.sh "$(BUILD_DIR)/Build/Products/Release/$(APP_NAME)" "$(DESTINATION)"

@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.0.0 — Dozer Workspace
+
+- Unified native workspace, Menu Bar, Windows, and About pages, with an explicit target-app picker for layout buttons.
+- Rectangle-derived geometry for 21 window actions, with configurable spacing and display transfer.
+- Configurable global shortcuts, conflict preservation, persistent clears, and safe recorder cleanup.
+- Optional edge/corner drag snapping with a translucent preview and Option bypass.
+- Per-window restore history, including the original frame before a snap drag, with independently queued window adjustments.
+- Bounded placement for application minimum sizes, Rectangle-derived accessibility animation handling, and staged placement recovery.
+- Existing menu bar hiding, recovery controls, login items, and preferences retained.
+- Bundled MPL/MIT notices and pinned Rectangle source provenance.
+
 ## Version 5.0.0 (local revival)
 
 * Native Apple Silicon and Intel builds for macOS 13 and later.
