@@ -1,0 +1,61 @@
+name: Track Rectangle releases
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: rectangle-release-tracking
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    if: github.repository == 'culpen90/Dozer' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Detect official stable Rectangle release
+        id: release
+        run: python3 Scripts/rectangle_release.py check --github-output "$GITHUB_OUTPUT"
+      - name: Stage untouched source and open a port request
+        if: steps.release.outputs.changed == 'true'
+        env:
+          RECTANGLE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          branch="upstream/rectangle-$RECTANGLE_TAG"
+          existing=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json url --jq '.[0].url // empty')
+          if [ -n "$existing" ]; then
+            echo "Port request already exists: $existing" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"
+            git switch --track "origin/$branch"
+          else
+            git switch -c "$branch"
+            python3 Scripts/rectangle_release.py update --tag "$RECTANGLE_TAG" --summary build/rectangle-update.md
+            python3 Scripts/rectangle_release.py verify
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add ThirdParty/Rectangle
+            git commit -m "Stage Rectangle $RECTANGLE_TAG for a Dozer port"
+            git push origin "HEAD:refs/heads/$branch"
+          fi
+          python3 Scripts/rectangle_release.py verify
+          python3 Scripts/rectangle_release.py check --tag "$RECTANGLE_TAG"
+          python3 -c 'import json, os; from pathlib import Path; record = json.loads(Path("ThirdParty/Rectangle/release.json").read_text()); assert record["tag"] == os.environ["RECTANGLE_TAG"], "Retained branch tracks a different release"'
+          python3 Scripts/rectangle_pr_body.py --output build/rectangle-port-pr.md
+          gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "$branch" --draft --title "Port Rectangle $RECTANGLE_TAG into Dozer" --body-file build/rectangle-port-pr.md >> "$GITHUB_STEP_SUMMARY"
+          # Dispatch explicitly: a bot-created push alone does not run CI.
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"

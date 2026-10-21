@@ -4,7 +4,7 @@
 
 # Dozer
 
-A calmer menu bar and windows right where you want them. Dozer combines [Mortennn/Dozer](https://github.com/Mortennn/Dozer) menu bar hiding with window layout geometry adapted from [Rectangle](https://github.com/rxhanson/Rectangle), in one native macOS app. No separate Rectangle installation, account, or third-party runtime dependencies are required.
+A calmer menu bar and windows right where you want them. This independently maintained Dozer combines [Mortennn/Dozer](https://github.com/Mortennn/Dozer) menu bar hiding with window tools ported from [Rectangle](https://github.com/rxhanson/Rectangle), in one native macOS app. Dozer keeps its own window interface and tracks official Rectangle releases for further ports. No separate Rectangle installation, account, or third-party runtime dependencies are required.
 
 Requires **macOS 13 or later**. Release builds contain native **Apple Silicon and Intel** executables.
 
@@ -40,7 +40,7 @@ Enable the optional second, smaller divider dot for an additional hidden group. 
 
 Open **Dozer Workspace → Windows** and choose **Enable Accessibility…**, then enable Dozer in **System Settings → Privacy & Security → Accessibility**. Only window management needs this permission. Quit Rectangle and other window managers to avoid competing shortcuts or drag previews.
 
-The workspace offers visual layout buttons for your last active app or an app selected in the target picker. The menu bar control’s right-click menu also contains every layout. Window tools include halves, quarters, thirds, two thirds, maximize, almost maximize, center, size adjustments, next/previous display, and a per-window restore history. On portrait displays, thirds run vertically. Display movement fits the destination’s visible area and respects menu bar/Dock space.
+The workspace offers visual layout buttons for your last active app or an app selected in the target picker. The menu bar control’s right-click menu also contains every layout. Window tools include halves, quarters, thirds, two thirds, six vertical sixth layouts, maximize, almost maximize, center, size adjustments, next/previous display, and a per-window restore history. On portrait displays, thirds and sixths run vertically. Display movement fits the destination’s visible area and respects menu bar/Dock space.
 
 Default global shortcuts:
 
@@ -56,7 +56,7 @@ Default global shortcuts:
 | Next / previous display | Control–Option–Shift–Right / Left |
 | Restore previous arrangement | Control–Option–Delete |
 
-Customize or clear each shortcut in Windows settings. A conflict preserves the previous working binding and shows an error. Clearing a shortcut persists across launches. Pausing window management releases its global shortcuts and drag monitor; the menu bar reveal shortcut remains separate.
+Customize or clear each shortcut in Windows settings. Sixth layouts start without a shortcut so existing bindings stay intact. A conflict preserves the previous working binding and shows an error. Clearing a shortcut persists across launches. Pausing window management releases its global shortcuts and drag monitor; the menu bar reveal shortcut remains separate. The optional repeated-layout setting switches repeated halves to the opposite side and cycles the first/last sixth through neighboring sixths; it starts off.
 
 Drag a normal window to a screen edge for a half, a corner for a quarter, or the top edge to maximize. A translucent preview appears before release. Hold **Option** to bypass Dozer's snapping; macOS's own window tiling may still respond to the drag. Window spacing is configurable from zero to 30 points. Restore after a drag returns to the frame from before the drag.
 
@@ -68,7 +68,13 @@ Dozer expands a divider status item to move the icons on its left out of the vis
 
 macOS controls menu bar layout. A display notch, a long application menu, a crowded menu bar, or multiple displays can limit the icons that fit when revealed. Move fewer icons into a group or enable the setting that temporarily shows Dozer's shorter application menu to free space. Some system items cannot be moved. Dozer does not provide a separate overflow panel for icons that do not fit.
 
-The upstream Sparkle updater has been removed so this revived app cannot silently replace itself with the old upstream build. Build updates from this repository.
+The old Dozer Sparkle updater has been removed so this independently maintained app cannot silently replace itself with the original upstream build. Build updates from this repository.
+
+## Rectangle release updates
+
+An hourly GitHub workflow detects official stable Rectangle releases and opens a draft port request containing an untouched source snapshot and the full change inventory. A recurring Codex maintenance task reviews and ports applicable changes into Dozer's existing controls, validates them, and merges the completed port. Dozer's menu bar code remains independently maintained; no changes are automatically imported from the original Dozer repository.
+
+A detected release remains pending until its port has been reviewed and tested. The current scoped integration and remaining feature differences are recorded under [`ThirdParty/Rectangle/Ports/`](ThirdParty/Rectangle/Ports/); tracking a source release does not mean complete Rectangle feature parity. The local coding task needs this Mac awake and the Codex desktop app running. GitHub detection continues independently. See the [maintenance procedure](ThirdParty/Rectangle/MAINTENANCE.md) for commands and acceptance rules. CI supplies a validated universal build artifact; updating the installed app still uses the build/install process above.
 
 ## Development
 
@@ -80,6 +86,10 @@ make test      # Run Foundation-only state tests, without launching the GUI
 make test-runtime # Run live menu bar integration checks (quit Dozer first)
 make test-window-shortcuts # Run real Carbon binding and recorder checks (quit Dozer first)
 make test-window-adjustment # Check scoped accessibility-state restoration (no permission required)
+make test-rectangle-updates # Check release tracking, snapshots, and review gating
+make rectangle-check # Check the latest official Rectangle release
+make rectangle-stage # Stage source for a pending port, without accepting it
+make rectangle-verify # Verify the untouched snapshot and recorded port review
 make install   # Install Release with an existing-app backup
 make run       # Build and launch Debug
 ```

@@ -1,5 +1,22 @@
 # Rectangle source attribution
 
+This project keeps Dozer's native window interface and ports upstream changes
+into Dozer-owned sources. Official release `v2.0.4`, commit
+`e9bb8521e51727de21c31c3a96747909d42c098f`, is preserved unchanged in `Upstream/`.
+`release.json` records snapshot integrity and scoped review status; `Ports/`
+records implemented changes, validation, and outstanding differences. The
+snapshot is reference material and is not compiled into the application.
+See [MAINTENANCE.md](MAINTENANCE.md) for release detection and port acceptance.
+
+The 2.0.4 follow-up port adds `VerticalSixthCalculation.swift` geometry,
+opposite-side repeated-half behavior from `SubsequentExecutionMode.swift` and
+the half calculations, and standard-window subrole recognition for Emacs from
+`AccessibilityElement.swift`. `DozerCore/WindowPlacement.swift` adapts its
+minimum-size-aware immediate adjustment sequence while retaining Dozer's
+asynchronous placement recovery. Existing UI, menu bar functionality, and
+preference ownership remain Dozer code. This is a scoped integration, not a
+claim of full application parity.
+
 The window geometry in `DozerCore/WindowLayout.swift` adapts calculations from
 [Rectangle](https://github.com/rxhanson/Rectangle), an MIT-licensed application by
 Ryan Hanson, based on Spectacle by Eric Czarny. Its license is included beside

@@ -218,4 +218,94 @@ final class WindowLayoutTests: XCTestCase {
             XCTAssertNil(WindowLayoutGeometry.frame(for: action, window: window, visibleFrame: screen, gap: 0))
         }
     }
+    func testUpstreamVerticalSixthsUseFlooredBoundariesAcrossLandscapeDisplay() throws {
+        let frames = try WindowLayoutAction.verticalSixths.map { try frame($0) }
+        XCTAssertEqual(frames.count, 6)
+        for index in frames.indices {
+            let start = floor(screen.width * CGFloat(index) / 6)
+            let end = floor(screen.width * CGFloat(index + 1) / 6)
+            XCTAssertEqual(frames[index], CGRect(x: screen.minX + start, y: screen.minY,
+                                                width: end - start, height: screen.height))
+            if index > 0 { XCTAssertEqual(frames[index - 1].maxX, frames[index].minX) }
+        }
+        XCTAssertEqual(frames.first?.minX, screen.minX)
+        XCTAssertEqual(frames.last?.maxX, screen.maxX)
+    }
+
+    func testUpstreamVerticalSixthsRotateFromTopToBottomOnPortraitAndSquareDisplays() throws {
+        for display in [CGRect(x: -900, y: -500, width: 801, height: 1601),
+                        CGRect(x: 100, y: -30, width: 1001, height: 1001)] {
+            let frames = try WindowLayoutAction.verticalSixths.map {
+                try XCTUnwrap(WindowLayoutGeometry.frame(for: $0, window: window, visibleFrame: display, gap: 0))
+            }
+            XCTAssertEqual(frames.first?.maxY, display.maxY)
+            XCTAssertEqual(frames.last?.minY, display.minY)
+            for index in frames.indices {
+                XCTAssertEqual(frames[index].width, display.width)
+                if index > 0 { XCTAssertEqual(frames[index - 1].minY, frames[index].maxY) }
+            }
+        }
+    }
+
+    func testSixthGapsSeparateNeighborsByOneGap() throws {
+        let first = try frame(.firstVerticalSixth, gap: 12)
+        let second = try frame(.secondVerticalSixth, gap: 12)
+        XCTAssertEqual(first.minX - screen.minX, 12)
+        XCTAssertEqual(second.minX - first.maxX, 12)
+        XCTAssertEqual(first.minY - screen.minY, 12)
+    }
+
+    func testRepeatedHalfActionsSwitchSidesOnlyWhenEnabledAndFrameMatches() {
+        let previous = WindowLayoutRepeatState(command: .leftHalf, layout: .leftHalf, frame: window)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .leftHalf, window: window, previous: previous, enabled: true), .rightHalf)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .leftHalf, window: window, previous: previous, enabled: false), .leftHalf)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .leftHalf, window: window.offsetBy(dx: 1, dy: 0), previous: previous, enabled: true), .leftHalf)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .leftHalf, window: window, previous: nil, enabled: true), .leftHalf)
+        let switched = WindowLayoutRepeatState(command: .leftHalf, layout: .rightHalf, frame: window)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .leftHalf, window: window, previous: switched, enabled: true), .leftHalf)
+        let top = WindowLayoutRepeatState(command: .topHalf, layout: .topHalf, frame: window)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .topHalf, window: window, previous: top, enabled: true), .bottomHalf)
+        let bottom = WindowLayoutRepeatState(command: .bottomHalf, layout: .bottomHalf, frame: window)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .bottomHalf, window: window, previous: bottom, enabled: true), .topHalf)
+    }
+
+    func testRepeatedFirstAndLastSixthsCycleAndWrap() {
+        for command in [WindowLayoutAction.firstVerticalSixth, .lastVerticalSixth] {
+            var layout = command
+            for step in 1...6 {
+                let previous = WindowLayoutRepeatState(command: command, layout: layout, frame: window)
+                layout = WindowLayoutGeometry.repeatedAction(for: command, window: window, previous: previous, enabled: true)
+                let index = command == .firstVerticalSixth ? step % 6 : (5 - step % 6 + 6) % 6
+                XCTAssertEqual(layout, WindowLayoutAction.verticalSixths[index])
+            }
+            XCTAssertEqual(layout, command)
+        }
+        let previous = WindowLayoutRepeatState(command: .thirdVerticalSixth, layout: .thirdVerticalSixth, frame: window)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .thirdVerticalSixth, window: window, previous: previous, enabled: true), .thirdVerticalSixth)
+        let first = WindowLayoutRepeatState(command: .firstVerticalSixth, layout: .secondVerticalSixth, frame: window)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .firstVerticalSixth, window: window, previous: first, enabled: false), .firstVerticalSixth)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .firstVerticalSixth, window: window.insetBy(dx: 1, dy: 0), previous: first, enabled: true), .thirdVerticalSixth)
+        XCTAssertEqual(WindowLayoutGeometry.repeatedAction(for: .lastVerticalSixth, window: window, previous: first, enabled: true), .lastVerticalSixth)
+    }
+
+    func testEmacsStandardWindowSubroleResolvesWithoutWindowRole() {
+        XCTAssertTrue(WindowAccessibilityClassification.isWindow(role: "AXTextField", subrole: "AXStandardWindow"))
+        XCTAssertTrue(WindowAccessibilityClassification.isWindow(role: "AXWindow", subrole: "AXStandardWindow"))
+        XCTAssertTrue(WindowAccessibilityClassification.isWindow(role: "AXWindow", subrole: nil))
+        XCTAssertFalse(WindowAccessibilityClassification.isWindow(role: "AXTextField", subrole: nil))
+        XCTAssertFalse(WindowAccessibilityClassification.isWindow(role: "AXButton", subrole: "AXCloseButton"))
+        XCTAssertFalse(WindowAccessibilityClassification.isWindow(role: nil, subrole: nil))
+    }
+
+    func testLastSixthRetainsFullOuterGapAtFlooredFractionalBoundary() throws {
+        let landscape = CGRect(x: -1600, y: -100, width: 1601.5, height: 1001)
+        let lastColumn = try XCTUnwrap(WindowLayoutGeometry.frame(for: .lastVerticalSixth, window: window,
+                                                                 visibleFrame: landscape, gap: 12))
+        XCTAssertEqual(lastColumn.maxX, landscape.minX + floor(landscape.width) - 12)
+        let portrait = CGRect(x: 100, y: -800, width: 801, height: 1601.5)
+        let lastRow = try XCTUnwrap(WindowLayoutGeometry.frame(for: .lastVerticalSixth, window: window,
+                                                              visibleFrame: portrait, gap: 12))
+        XCTAssertEqual(lastRow.minY, portrait.maxY - floor(portrait.height) + 12)
+    }
+
 }

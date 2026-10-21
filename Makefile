@@ -4,7 +4,7 @@ PROJECT := Dozer.xcodeproj
 APP_NAME := Dozer.app
 DESTINATION ?= /Applications/Dozer.app
 
-.PHONY: project build release test test-runtime test-window-shortcuts test-window-adjustment install run clean
+.PHONY: project build release test test-runtime test-window-shortcuts test-window-adjustment test-rectangle-updates rectangle-check rectangle-stage rectangle-verify install run clean
 
 project:
 	@command -v "$(XCODEGEN)" >/dev/null || { echo 'Install XcodeGen first: brew install xcodegen'; exit 1; }
@@ -20,6 +20,18 @@ release: project
 
 test:
 	swift test
+
+test-rectangle-updates:
+	python3 -m unittest discover -s Tests/RectangleReleaseTests -v
+
+rectangle-check:
+	python3 Scripts/rectangle_release.py check
+
+rectangle-stage:
+	python3 Scripts/rectangle_release.py update
+
+rectangle-verify:
+	python3 Scripts/rectangle_release.py verify
 
 test-runtime:
 	@Scripts/TestRuntime.sh

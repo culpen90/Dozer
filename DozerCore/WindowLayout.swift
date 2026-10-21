@@ -8,6 +8,7 @@ enum WindowLayoutAction: String, CaseIterable {
     case leftHalf, rightHalf, topHalf, bottomHalf
     case topLeft, topRight, bottomLeft, bottomRight
     case firstThird, centerThird, lastThird, firstTwoThirds, lastTwoThirds
+    case firstVerticalSixth, secondVerticalSixth, thirdVerticalSixth, fourthVerticalSixth, fifthVerticalSixth, lastVerticalSixth
     case maximize, almostMaximize, center, larger, smaller
     case nextDisplay, previousDisplay, restore
 
@@ -26,6 +27,12 @@ enum WindowLayoutAction: String, CaseIterable {
         case .lastThird: return "Last Third"
         case .firstTwoThirds: return "First Two Thirds"
         case .lastTwoThirds: return "Last Two Thirds"
+        case .firstVerticalSixth: return "First Sixth"
+        case .secondVerticalSixth: return "Second Sixth"
+        case .thirdVerticalSixth: return "Third Sixth"
+        case .fourthVerticalSixth: return "Fourth Sixth"
+        case .fifthVerticalSixth: return "Fifth Sixth"
+        case .lastVerticalSixth: return "Last Sixth"
         case .maximize: return "Maximize"
         case .almostMaximize: return "Almost Maximize"
         case .center: return "Center"
@@ -50,6 +57,8 @@ enum WindowLayoutAction: String, CaseIterable {
         case .firstThird, .firstTwoThirds: return "rectangle.leadingthird.inset.filled"
         case .centerThird: return "rectangle.center.inset.filled"
         case .lastThird, .lastTwoThirds: return "rectangle.trailingthird.inset.filled"
+        case .firstVerticalSixth, .secondVerticalSixth, .thirdVerticalSixth,
+             .fourthVerticalSixth, .fifthVerticalSixth, .lastVerticalSixth: return "rectangle.split.3x1"
         case .maximize: return "arrow.up.left.and.arrow.down.right"
         case .almostMaximize: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
         case .center: return "arrow.up.and.down.and.arrow.left.and.right"
@@ -60,11 +69,16 @@ enum WindowLayoutAction: String, CaseIterable {
         }
     }
 
+    static let verticalSixths: [WindowLayoutAction] = [.firstVerticalSixth, .secondVerticalSixth,
+        .thirdVerticalSixth, .fourthVerticalSixth, .fifthVerticalSixth, .lastVerticalSixth]
+
     var group: String {
         switch self {
         case .leftHalf, .rightHalf, .topHalf, .bottomHalf: return "Halves"
         case .topLeft, .topRight, .bottomLeft, .bottomRight: return "Quarters"
         case .firstThird, .centerThird, .lastThird, .firstTwoThirds, .lastTwoThirds: return "Thirds"
+        case .firstVerticalSixth, .secondVerticalSixth, .thirdVerticalSixth,
+             .fourthVerticalSixth, .fifthVerticalSixth, .lastVerticalSixth: return "Sixths"
         case .maximize, .almostMaximize, .center, .larger, .smaller: return "Size & Position"
         case .nextDisplay, .previousDisplay: return "Displays"
         case .restore: return "History"
@@ -72,9 +86,53 @@ enum WindowLayoutAction: String, CaseIterable {
     }
 }
 
+/// Rectangle stores the resulting half action, or the requested sixth action
+/// plus its resolved ordinal, only after the window has reached the layout.
+struct WindowLayoutRepeatState {
+    let action: WindowLayoutAction
+    let layout: WindowLayoutAction
+    let frame: CGRect
+
+    init(command: WindowLayoutAction, layout: WindowLayoutAction, frame: CGRect) {
+        switch command {
+        case .leftHalf, .rightHalf, .topHalf, .bottomHalf: action = layout
+        default: action = command
+        }
+        self.layout = layout
+        self.frame = frame
+    }
+}
+
+/// Some toolkits identify their top-level window through its standard-window
+/// subrole while exposing a text-field role (notably Emacs 28).
+enum WindowAccessibilityClassification {
+    static func isWindow(role: String?, subrole: String?) -> Bool {
+        role == "AXWindow" || subrole == "AXStandardWindow"
+    }
+}
+
 /// Pure geometry in AppKit coordinates: y increases upward. Accessibility coordinates
 /// must be converted by the caller using the primary display's height.
 enum WindowLayoutGeometry {
+    /// Adapted from Rectangle 2.0.4's switchSides and VerticalSixthCalculation.
+    /// Half switching requires the exact last frame. Sixth cycling follows the
+    /// previous ordinal even if the window has moved, as in upstream.
+    static func repeatedAction(for action: WindowLayoutAction, window: CGRect,
+                               previous: WindowLayoutRepeatState?, enabled: Bool) -> WindowLayoutAction {
+        guard enabled, let previous, previous.action == action, isUsable(window) else { return action }
+        switch action {
+        case .leftHalf: return previous.frame == window ? .rightHalf : action
+        case .rightHalf: return previous.frame == window ? .leftHalf : action
+        case .topHalf: return previous.frame == window ? .bottomHalf : action
+        case .bottomHalf: return previous.frame == window ? .topHalf : action
+        case .firstVerticalSixth, .lastVerticalSixth:
+            guard let ordinal = WindowLayoutAction.verticalSixths.firstIndex(of: previous.layout) else { return action }
+            let step = action == .firstVerticalSixth ? 1 : 5
+            return WindowLayoutAction.verticalSixths[(ordinal + step) % 6]
+        default: return action
+        }
+    }
+
     static func frame(for action: WindowLayoutAction, window: CGRect,
                       visibleFrame screen: CGRect, gap: CGFloat) -> CGRect? {
         guard isUsable(screen), isUsable(window) else { return nil }
@@ -99,6 +157,20 @@ enum WindowLayoutGeometry {
             } else {
                 rect = tile(in: screen, x: 0, y: 3 - index - count, columns: 1, rows: 3, rowSpan: count)
             }
+        case .firstVerticalSixth, .secondVerticalSixth, .thirdVerticalSixth,
+             .fourthVerticalSixth, .fifthVerticalSixth, .lastVerticalSixth:
+            guard let ordinal = WindowLayoutAction.verticalSixths.firstIndex(of: action) else { return nil }
+            if screen.width > screen.height {
+                // Upstream uses floor at both sixth boundaries, including the
+                // final boundary, on fractional as well as odd screen sizes.
+                let start = floor(screen.width * CGFloat(ordinal) / 6)
+                let end = floor(screen.width * CGFloat(ordinal + 1) / 6)
+                rect = CGRect(x: screen.minX + start, y: screen.minY, width: end - start, height: screen.height)
+            } else {
+                let start = floor(screen.height * CGFloat(ordinal) / 6)
+                let end = floor(screen.height * CGFloat(ordinal + 1) / 6)
+                rect = CGRect(x: screen.minX, y: screen.maxY - end, width: screen.width, height: end - start)
+            }
         case .maximize: break
         case .almostMaximize:
             rect = centered(size: CGSize(width: round(screen.width * 0.9), height: round(screen.height * 0.9)), in: screen)
@@ -113,7 +185,17 @@ enum WindowLayoutGeometry {
             return contained(rect, in: screen)
         case .nextDisplay, .previousDisplay, .restore: return nil
         }
-        return applyGaps(rect, in: screen, gap: gap)
+        // Upstream's sixth subactions declare shared edges explicitly. The
+        // floored final boundary can sit less than a point inside a fractional
+        // display, which must still receive a full outer gap.
+        let sharedEdges: (left: Bool, right: Bool, bottom: Bool, top: Bool)? =
+            WindowLayoutAction.verticalSixths.firstIndex(of: action).map { ordinal in
+                if screen.width > screen.height {
+                    return (ordinal > 0, ordinal < 5, false, false)
+                }
+                return (false, false, ordinal < 5, ordinal > 0)
+            }
+        return applyGaps(rect, in: screen, gap: gap, sharedEdges: sharedEdges)
     }
 
     /// Greatest intersection wins. Fully offscreen windows use the nearest display center.
@@ -241,13 +323,14 @@ enum WindowLayoutGeometry {
 
     /// Rectangle's GapCalculation gives shared tile edges half a gap, so adjacent
     /// windows are separated by one gap while outer screen edges retain a full gap.
-    private static func applyGaps(_ rect: CGRect, in screen: CGRect, gap: CGFloat) -> CGRect? {
+    private static func applyGaps(_ rect: CGRect, in screen: CGRect, gap: CGFloat,
+                                  sharedEdges: (left: Bool, right: Bool, bottom: Bool, top: Bool)? = nil) -> CGRect? {
         guard isUsable(rect) else { return nil }
         let gap = gap.isFinite ? min(max(0, gap), min(rect.width, rect.height) / 4) : 0
-        let left = rect.minX > screen.minX ? gap / 2 : gap
-        let right = rect.maxX < screen.maxX ? gap / 2 : gap
-        let bottom = rect.minY > screen.minY ? gap / 2 : gap
-        let top = rect.maxY < screen.maxY ? gap / 2 : gap
+        let left = (sharedEdges?.left ?? (rect.minX > screen.minX)) ? gap / 2 : gap
+        let right = (sharedEdges?.right ?? (rect.maxX < screen.maxX)) ? gap / 2 : gap
+        let bottom = (sharedEdges?.bottom ?? (rect.minY > screen.minY)) ? gap / 2 : gap
+        let top = (sharedEdges?.top ?? (rect.maxY < screen.maxY)) ? gap / 2 : gap
         return CGRect(x: rect.minX + left, y: rect.minY + bottom,
                       width: rect.width - left - right, height: rect.height - bottom - top)
     }
