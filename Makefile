@@ -1,13 +1,35 @@
-build:
-	@brew bundle --no-upgrade
-	@carthage bootstrap --cache-builds --platform osx
-	@mkdir -p Dozer/Other/Generated
-	@swiftgen
-	@xcodegen 
-	@xed "."
+XCODEGEN ?= xcodegen
+BUILD_DIR := $(CURDIR)/build
+PROJECT := Dozer.xcodeproj
+APP_NAME := Dozer.app
+DESTINATION ?= /Applications/Dozer.app
 
-release:
-	@echo "Running Fastlane deploy"
-	@bundle exec fastlane release
+.PHONY: project build release test test-runtime install run clean
 
-.PHONY: build release 
+project:
+	@command -v "$(XCODEGEN)" >/dev/null || { echo 'Install XcodeGen first: brew install xcodegen'; exit 1; }
+	@"$(XCODEGEN)" generate --spec project.yml
+
+build: project
+	xcodebuild -quiet -project "$(PROJECT)" -scheme Dozer -configuration Debug -destination 'generic/platform=macOS' -derivedDataPath "$(BUILD_DIR)" build CODE_SIGNING_ALLOWED=NO
+	@Scripts/SignApp.sh "$(BUILD_DIR)/Build/Products/Debug/$(APP_NAME)"
+
+release: project
+	xcodebuild -quiet -project "$(PROJECT)" -scheme Dozer -configuration Release -destination 'generic/platform=macOS' -derivedDataPath "$(BUILD_DIR)" build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO
+	@Scripts/SignApp.sh "$(BUILD_DIR)/Build/Products/Release/$(APP_NAME)"
+
+test:
+	swift test
+
+test-runtime:
+	@Scripts/TestRuntime.sh
+
+install: release
+	@Scripts/InstallApp.sh "$(BUILD_DIR)/Build/Products/Release/$(APP_NAME)" "$(DESTINATION)"
+
+run: build
+	open "$(BUILD_DIR)/Build/Products/Debug/$(APP_NAME)"
+
+clean:
+	xcodebuild -quiet -project "$(PROJECT)" -scheme Dozer -destination 'generic/platform=macOS' -derivedDataPath "$(BUILD_DIR)" clean
+	swift package clean

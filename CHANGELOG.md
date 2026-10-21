@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 5.0.0 (local revival)
+
+* Native Apple Silicon and Intel builds for macOS 13 and later.
+* Replace obsolete third-party frameworks with native settings, keyboard shortcuts, and system login items.
+* Stabilize status item identity and layout, optional groups, shortcut recovery, and auto-hide behavior.
+* Preserve existing preference keys and remove the upstream automatic-update feed.
+* Add reproducible builds, local signing, installation backups, and focused state tests.
+
 ## Version 4.2.0
 New features:
 * Configure amount of seconds to hide the icons after #104. @blakedgordon
