@@ -8,6 +8,14 @@ A calmer menu bar and windows right where you want them. This independently main
 
 Requires **macOS 13 or later**. Release builds contain native **Apple Silicon and Intel** executables.
 
+This combined app has its own release numbering, independent of both upstream projects. **1.0.0** is its first public release; the 5.x and 6.x entries in the development history were local milestones.
+
+## Download and install
+
+Download the universal app ZIP from [GitHub Releases](https://github.com/culpen90/Dozer/releases/latest). Quit a running copy of Dozer, unzip the download, and move `Dozer.app` into `/Applications`. Existing preferences are retained. Each release includes a SHA256 checksum file for the download.
+
+Release downloads are ad-hoc signed and **not notarized**. macOS may require approval in Privacy & Security before opening the app. Window management also requires Accessibility access; after replacing a build, you may need to remove Dozer from that system list and add `/Applications/Dozer.app` again.
+
 ## Build and install
 
 Install Xcode, select it with `xcode-select`, accept its license, and install [XcodeGen](https://github.com/yonaskolb/XcodeGen):
@@ -68,13 +76,13 @@ Dozer expands a divider status item to move the icons on its left out of the vis
 
 macOS controls menu bar layout. A display notch, a long application menu, a crowded menu bar, or multiple displays can limit the icons that fit when revealed. Move fewer icons into a group or enable the setting that temporarily shows Dozer's shorter application menu to free space. Some system items cannot be moved. Dozer does not provide a separate overflow panel for icons that do not fit.
 
-The old Dozer Sparkle updater has been removed so this independently maintained app cannot silently replace itself with the original upstream build. Build updates from this repository.
+The old Dozer Sparkle updater has been removed so this independently maintained app cannot silently replace itself with the original upstream build. Download updates from this repository's [Releases page](https://github.com/culpen90/Dozer/releases) or build them from source.
 
 ## Rectangle release updates
 
 An hourly GitHub workflow detects official stable Rectangle releases and opens a draft port request containing an untouched source snapshot and the full change inventory. Maintainers review and port applicable changes into Dozer's existing controls, validate them, and merge the completed port. Dozer's menu bar code remains independently maintained; no changes are automatically imported from the original Dozer repository.
 
-A detected release remains pending until its port has been reviewed and tested. The current scoped integration and remaining feature differences are recorded under [`ThirdParty/Rectangle/Ports/`](ThirdParty/Rectangle/Ports/); tracking a source release does not mean complete Rectangle feature parity. The GitHub detector handles discovery; porting and merging are manual maintenance work. See the [maintenance procedure](ThirdParty/Rectangle/MAINTENANCE.md) for commands and acceptance rules. CI supplies a validated universal build artifact; updating the installed app still uses the build/install process above.
+A detected release remains pending until its port has been reviewed and tested. The current scoped integration and remaining feature differences are recorded under [`ThirdParty/Rectangle/Ports/`](ThirdParty/Rectangle/Ports/); tracking a source release does not mean complete Rectangle feature parity. The GitHub detector handles discovery; porting and merging are manual maintenance work. See the [maintenance procedure](ThirdParty/Rectangle/MAINTENANCE.md) for commands and acceptance rules. CI supplies a validated universal build artifact; published Dozer releases are available from GitHub Releases.
 
 ## Development
 

@@ -1,6 +1,20 @@
 # Changelog
 
-## 6.1.0 — Independent Rectangle release ports
+## 1.0.0 — First independent combined release
+
+This is the first public release of this combined Dozer app, with its own version line independent of Dozer and Rectangle upstream. Earlier 5.x and 6.x numbers below identify local development milestones. The internal build number continues at 34, and the existing preference domain is retained.
+
+- Combine Dozer menu bar hiding and Rectangle-derived window tools in one native workspace.
+- Include configurable window shortcuts, edge/corner snapping, per-window restore history, display transfer, window spacing, and sixth layouts.
+- Offer optional opposite-side repeated half commands and recognize Emacs standard-window subroles during drag snapping.
+- Use minimum-size-aware placement and avoid redundant Accessibility writes while preserving recovery.
+- Preserve menu bar preferences, optional hidden groups, auto-hide, and opt-in launch at login.
+- Publish a universal Apple Silicon and Intel app for macOS 13 or later, with SHA256 checksums and bundled MPL/MIT notices.
+- Track official Rectangle releases as pending source snapshots for manual review and ports into Dozer's own interface.
+
+Release builds are ad-hoc signed and not notarized. Rectangle integration remains scoped; the recorded feature differences are in `ThirdParty/Rectangle/Ports/`.
+
+## Local milestone 6.1.0 — Independent Rectangle release ports
 
 - Keep Dozer's window interface and independently maintained menu bar features.
 - Track official Rectangle releases hourly, stage full source snapshots as draft ports, and require recorded review and validation before acceptance.
@@ -9,7 +23,7 @@
 - Use minimum-size-aware window placement and avoid redundant Accessibility writes while preserving asynchronous recovery.
 - Add CI for source integrity, port tooling, native core regressions, and universal builds.
 
-## 6.0.0 — Dozer Workspace
+## Local milestone 6.0.0 — Dozer Workspace
 
 - Unified native workspace, Menu Bar, Windows, and About pages, with an explicit target-app picker for layout buttons.
 - Rectangle-derived geometry for 21 window actions, with configurable spacing and display transfer.
