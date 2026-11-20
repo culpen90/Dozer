@@ -75,7 +75,7 @@ If pressing a button doesn't record it, other software, such as your mouse's own
 
 ### Ignore an app
 
-Ignoring an app means that when the app is frontmost, keyboard shortcuts are un-registered from macOS. When the app is no longer frontmost, keyboard shortcuts are re-registered with macOS. This is useful for apps that have the same shortcuts like Rectangle and you do not want to change them.
+Ignoring an app means that when the app is frontmost, keyboard shortcuts are un-registered from macOS. When the app is no longer frontmost, keyboard shortcuts are re-registered with macOS. This is useful for apps that have the same shortcuts like Rectangle and you do not want to change them. Double-clicking the title bar of an ignored app's window does not trigger Rectangle's title bar action either.
 
 1. Focus the app that you want to ignore (make a window from that app frontmost).
 1. Open the Rectangle menu and select "Ignore app"
@@ -111,7 +111,7 @@ See [TerminalCommands.md](TerminalCommands.md)
 * Rectangle has additional window actions: move windows to each edge without resizing, maximize only the height of a window, almost maximizing a window.
 * Next/prev screen thirds is replaced with explicitly first third, first two thirds, center third, last two thirds, and last third. Screen orientation is taken into account, as in first third will be left third on landscape and top third on portrait.
   * You can however emulate Spectacle's third cycling using first and last third actions. So, if you repeatedly execute first third, it will cycle through thirds (first, center, last) and vice-versa with the last third.
-* There's an option to have windows traverse across displays on subsequent left or right executions.
+* There's an option to have windows traverse across displays on repeated side actions. Left/Right Half use the display ordering. Top/Bottom Half move to the nearest display above/below with horizontal overlap, landing on its facing half. At the top or bottom of a display stack, traversal wraps to its opposite end, just like left/right cycling. The combined traverse-and-resize option cycles sizes at the boundary instead.
 * Windows will snap when dragged to edges/corners of the screen. This can be disabled.
 
 ## Common Known Issues
