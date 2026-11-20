@@ -6,6 +6,7 @@ The preferences window is purposefully slim, but there's a lot that can be modif
 
 - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Adjust Behavior on Repeated Commands](#adjust-behavior-on-repeated-commands)
+- [Move thirds and fourths to the adjacent display on repeat](#move-thirds-and-fourths-to-the-adjacent-display-on-repeat)
 - [Cycle thirds on repeated Center Half commands](#cycle-thirds-on-repeated-center-half-commands)
 - [Resize on Directional Move](#resize-on-directional-move)
 - [Make the half actions tile like Windows or KDE](#make-the-half-actions-tile-like-windows-or-kde)
@@ -34,6 +35,7 @@ The preferences window is purposefully slim, but there's a lot that can be modif
 - [Disabling window restore when moving windows](#disabling-window-restore-when-moving-windows)
 - [Changing the margin for the snap areas](#changing-the-margin-for-the-snap-areas)
 - [Setting gaps at the screen edges](#setting-gaps-at-the-screen-edges)
+- [Use the full screen height when the menu bar is hidden](#use-the-full-screen-height-when-the-menu-bar-is-hidden)
 - [Ignore specific drag to snap areas](#ignore-specific-drag-to-snap-areas)
 - [Disabling gaps when maximizing](#disabling-gaps-when-maximizing)
 - [Enabling snap areas for sixths](#enabling-snap-areas-for-sixths)
@@ -41,6 +43,7 @@ The preferences window is purposefully slim, but there's a lot that can be modif
 - [Control Enhanced UI handling](#control-enhanced-ui-handling)
 - [Prevent a window that is quickly dragged above the menu bar from going into Mission Control](#prevent-a-window-that-is-quickly-dragged-above-the-menu-bar-from-going-into-mission-control)
 - [Change the behavior of double-click window title bar](#change-the-behavior-of-double-click-window-title-bar)
+- [Apply an action to every new window](#apply-an-action-to-every-new-window)
 - [Change the order of displays to order by x coordinate](#change-the-order-of-displays-to-order-by-x-coordinate-for-next-and-prev-displays-commands)
 - [Keep window size when moving a maximized window to another display](#keep-window-size-when-moving-a-maximized-window-to-another-display)
 - [Repeat the last Rectangle action when moving to another display](#repeat-the-last-rectangle-action-when-moving-to-another-display)
@@ -69,12 +72,26 @@ defaults write com.knollsoft.Rectangle subsequentExecutionMode -int 2
 
 `subsequentExecutionMode` accepts the following values:
 0: halves to thirds Spectacle behavior (box unchecked)
-1: cycle displays (box checked) for left/right actions
+1: cycle displays (box checked) for side actions
 2: disabled
-3: cycle displays for left/right actions, halves to thirds for the rest (old Rectangle behavior)
+3: cycle displays for side actions, halves to thirds for the rest (old Rectangle behavior)
 4: repeat same action on next display
 5: cycle positions on quadrants, cycle sizes on side
 6: switch to the opposite side on half actions
+
+## Move thirds and fourths to the adjacent display on repeat
+
+This is off by default. With "Move to adjacent display on side actions" selected as the repeated command, repeating Left Third, Right Third, First Fourth or Last Fourth moves the window to the adjacent display, the same way the left and right halves do. Without this setting, those repeats cycle the window through positions on the same display. Without a second display, they keep cycling.
+
+```bash
+defaults write com.knollsoft.Rectangle thirdsAndFourthsAcrossDisplays -bool true
+```
+
+To turn it off again, delete the setting:
+
+```bash
+defaults delete com.knollsoft.Rectangle thirdsAndFourthsAcrossDisplays
+```
 
 ## Cycle thirds on repeated Center Half commands
 
@@ -298,6 +315,12 @@ defaults write com.knollsoft.Rectangle firstVerticalSixth -dict-add keyCode -flo
 
 Repeating `firstVerticalSixth` cycles forward through all 6 positions. Repeating `lastVerticalSixth` cycles through them in reverse when repeated-command behavior is enabled.
 
+To instead have repeating any of them cycle the window through the three placements available inside that sixth (the whole sixth, then half of it: the top half of a column, or the left half of a row on a portrait display, then the other half, then the whole sixth again):
+
+```bash
+defaults write com.knollsoft.Rectangle verticalSixthsCycleTwelfths -bool true
+```
+
 ## Add additional "thirds" sizing commands 
 
 These commands for resizing to corner two-thirds are not available in the UI but can be configured via CLI.
@@ -477,6 +500,8 @@ Keeps the window restore behavior above for everything else:
 defaults write com.knollsoft.Rectangle unsnapRestoreFromSizeChange -int 2
 ```
 
+This can also be toggled with the "Also restore windows resized with Larger or Smaller" checkbox in the Snap Areas tab of the Settings window.
+
 ## Changing the margin for the snap areas
 
 Each margin is configured separately, and has a default value of 5
@@ -525,6 +550,22 @@ If you want these gaps to be applied on your main screen only you can set screen
 
 ```bash
 defaults write com.knollsoft.Rectangle screenEdgeGapsOnMainScreenOnly -bool true
+```
+
+## Use the full screen height when the menu bar is hidden
+
+Some apps hide the menu bar only while they are frontmost (for example with `LSUIPresentationMode` in their Info.plist). macOS keeps reporting the menu bar's strip as reserved to other apps, so Rectangle leaves it empty at the top of the screen. To have Rectangle use the whole screen height instead, execute:
+
+```bash
+defaults write com.knollsoft.Rectangle ignoreMenuBar -bool true
+```
+
+Only enable this when your menu bar is hidden: while it is visible, macOS keeps windows below it, so a full-height window is pushed down and its bottom edge ends up off screen. If the menu bar is hidden system-wide in System Settings, macOS already reports the full height and this changes nothing. Windows stay below the notch on displays that have one, and the screen edge gaps above still apply.
+
+Restart Rectangle after changing this preference. To restore the default:
+
+```bash
+defaults delete com.knollsoft.Rectangle ignoreMenuBar
 ```
 
 ## Ignore specific drag to snap areas
@@ -655,6 +696,20 @@ To disable double-click window title bar only for specific bundle ids (in exampl
 
 ```bash
 defaults write com.knollsoft.Rectangle doubleClickTitleBarIgnoredApps -string "[\"com.microsoft.Outlook\"]"
+```
+
+## Apply an action to every new window
+
+Rectangle can run one of its window actions on each window an application opens, for example to maximize new windows. The value takes the same names as the `rectangle://execute-action` URLs listed in the [README](https://github.com/rxhanson/Rectangle#execute-an-action-by-url), such as `maximize`, `almost-maximize`, `center` or `left-half`. Actions that arrange several windows (`tile-all`, `cascade-all`, `cascade-active-app` and the like), the display moves (`next-display`, `previous-display`, `display-one` and so on) and `restore` are not accepted:
+
+```bash
+defaults write com.knollsoft.Rectangle newWindowAction -string maximize
+```
+
+Only ordinary windows of apps that have a Dock icon are affected; menu bar utilities are not watched. Dialogs, sheets, palettes, minimized and full-screen windows are left alone, as are apps on Rectangle's ignore list, the Todo app while Todo mode is on, windows that already exist when Rectangle starts, and a window that appears while you are dragging with the mouse, such as a tab torn off into its own window. Windows an app restores while it launches count as new. To turn it off:
+
+```bash
+defaults delete com.knollsoft.Rectangle newWindowAction
 ```
 
 ## Change the order of displays to order by x coordinate for next and prev displays commands
